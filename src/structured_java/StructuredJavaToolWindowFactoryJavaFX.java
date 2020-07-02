@@ -17,10 +17,12 @@ import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Text;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -43,6 +45,7 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
     private List<PsiClass> innerClasses = new ArrayList<>();
     private List<List<PsiNamedElement>> dataAreas = new ArrayList<>();
 
+    private Scene scene;
     private VBox root = new VBox();
     private List<VBox> areas = new ArrayList<>();
     private Button addVariableButton;
@@ -74,8 +77,8 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
             buildUserInterface();
 
             // Create the scene and add it to the panel.
-            Scene scene = new Scene(root, 400, 250);
-            scene.setOnKeyPressed(this);
+            scene = new Scene(root, 400, 250);
+            scene.addEventFilter(KeyEvent.KEY_PRESSED, this);
             fxPanel.setScene(scene);
 
             // Don't focus on any particular component.
@@ -163,13 +166,21 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
 
     @Override
     public void handle(KeyEvent event) {
+        // Get the focused area and row area.
         VBox focusedArea = areas.get(keyboardFocusInfo.getFocusedAreaIndex());
         VBox focusedRowArea = (VBox) focusedArea.getChildren().get(1);
+
+        // Consume the event if the focused component is NOT a text field,
+        // or if the event is ENTER or TAB.
+        if (!(scene.focusOwnerProperty().get() instanceof TextField) ||
+            event.getCode() == ENTER ||
+            event.getCode() == TAB) {
+            event.consume();
+        }
 
         // Navigating areas or row with the up/down arrow keys.
         if (event.getCode() == UP) {
             moveFocusUpForAreaOrRow();
-
         }
         if (event.getCode() == DOWN) {
             moveFocusDownForAreaOrRow();
@@ -190,14 +201,12 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
                         break;
                     }
                     case ROW: {
-                        HBox row = (HBox) (focusedRowArea.getChildren().get(keyboardFocusInfo.getFocusedRow()));
-                        row.getChildren().get(0).requestFocus();
                         keyboardFocusInfo.setFocusLevel(KeyboardFocusInfo.FocusLevel.COLUMN);
                         keyboardFocusInfo.setFocusedColumn(0);
                         break;
                     }
                     case COLUMN: {
-                        // Rename the variable if the focused column is the name.
+                        // Rename the variable if the focused column is the last column, which should be the name.
                         HBox row = (HBox) (focusedRowArea.getChildren().get(keyboardFocusInfo.getFocusedRow()));
                         if (keyboardFocusInfo.getFocusedColumn() == row.getChildren().size() - 1) {
                             // Get the IntelliJ reference to the thing to rename.
@@ -217,7 +226,6 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
                         }
 
                         // Move the focus to row selection.
-                        focusedRowArea.requestFocus();
                         keyboardFocusInfo.setFocusLevel(KeyboardFocusInfo.FocusLevel.ROW);
                         break;
                     }
@@ -247,8 +255,14 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
 
         // Use the LEFT key to exit editing a row without making any changes and to move up one focus level.
         if (event.getCode() == LEFT) {
-            if (keyboardFocusInfo.getFocusLevel() == KeyboardFocusInfo.FocusLevel.ROW) {
-                keyboardFocusInfo.setFocusLevel(KeyboardFocusInfo.FocusLevel.AREA);
+            switch (keyboardFocusInfo.getFocusLevel()) {
+                case ROW: {
+                    keyboardFocusInfo.setFocusLevel(KeyboardFocusInfo.FocusLevel.AREA);
+                    break;
+                }
+                case COLUMN: {
+                    return;
+                }
             }
         }
 
@@ -261,11 +275,12 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
                     break;
                 }
                 case ROW: {
-                    HBox row = (HBox) (focusedRowArea.getChildren().get(keyboardFocusInfo.getFocusedRow()));
-                    row.getChildren().get(0).requestFocus();
                     keyboardFocusInfo.setFocusLevel(KeyboardFocusInfo.FocusLevel.COLUMN);
                     keyboardFocusInfo.setFocusedColumn(0);
                     break;
+                }
+                case COLUMN: {
+                    return;
                 }
             }
         }
@@ -289,6 +304,7 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
                 }
             }
         }
+
         // Highlight the currently focused row.
         highlightFocusedComponent();
 
@@ -436,11 +452,8 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
         // The row for adding a new variable.
         HBox newVariableRow = new HBox();
 
-        // The textfield for the new variable.
+        // The text field for the new variable.
         newVariableField = new TextField();
-
-         // Exit adding a variable with CTRL-X.
-        // newVariableField.setOnKeyPressed(getExitTextFieldHandler());
         newVariableRow.getChildren().add(newVariableField);
 
         // The button to add a variable.
@@ -492,32 +505,41 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
             HBox rowBox = new HBox();
             rowBox.setSpacing(5);
 
-            // Get a list of strings for all of the method's fields.
-            List<String> currentFields = new ArrayList<>();
-
             // Modifiers
             PsiElement[] modifiers = ApplicationManager.getApplication().runReadAction((Computable<PsiElement[]>) () -> method.getModifierList().getChildren());
             for (PsiElement modifier : modifiers) {
-                currentFields.add(modifier.getText());
+                rowBox.getChildren().add(getVariableField(modifier.getText()));
             }
 
             // Return Type
             boolean methodIsConstructor = ApplicationManager.getApplication().runReadAction((Computable<Boolean>) method::isConstructor);
             if (!methodIsConstructor) {
                 String methodReturnType = ApplicationManager.getApplication().runReadAction((Computable<String>) () -> method.getReturnType().getPresentableText());
-                currentFields.add(methodReturnType);
+                rowBox.getChildren().add(getVariableField(methodReturnType));
             }
+
+            // Add the number of parameters in a ListView component.
+            ListView<String> parametersList = new ListView<>();
+
+            // Set the text.
+            int numberOfParameters = method.getParameterList().getParameters().length;
+            String parametersString = "Parameters (" + numberOfParameters + ")";
+            parametersList.getItems().add(parametersString);
+            rowBox.getChildren().add(parametersList);
+
+            // Set the height.
+            parametersList.prefHeightProperty().setValue(numberOfParameters);
+
+            // Set the width.
+            Text testText = new Text(parametersString);
+            double parametersStringWidth = testText.getLayoutBounds().getWidth() + 16;
+            parametersList.setPrefWidth(parametersStringWidth);
 
             // Name
             String methodName = ApplicationManager.getApplication().runReadAction((Computable<String>) method::getName);
-            currentFields.add(methodName);
+            rowBox.getChildren().add(getVariableField(methodName));
 
-            // Add all of the fields as text fields to the current row.
-            for (String field : currentFields) {
-                TextField textField = getVariableField(field);
-                rowBox.getChildren().add(textField);
-            }
-
+            // Add the row component to the area component.
             areaRowBox.getChildren().add(rowBox);
         }
 
