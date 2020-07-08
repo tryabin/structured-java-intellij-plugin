@@ -101,13 +101,12 @@ public class AddVariableHandler implements EventHandler<ActionEvent> {
         // Wait until the number of variables in the class changes.
         Utilities.waitForNumberOfVariablesInClassToChange(psiFields.length, ui);
 
-        // Rebuild the UI.
-        ui.buildUserInterface();
-
         // Focus on the row of the new variable.
         KeyboardFocusInfo focusInfo = ui.getKeyboardFocusInfo();
         focusInfo.setFocusLevel(KeyboardFocusInfo.FocusLevel.ROW);
-        ui.highlightFocusedComponent();
-        ui.setKeyboardFocus();
+
+        // Rebuild the UI.
+        ui.buildClassOutlineScene();
+        ui.setSceneToClassOutline();
     }
 }
