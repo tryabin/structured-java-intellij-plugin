@@ -1,24 +1,15 @@
 package structured_java;
 
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
-import javafx.scene.layout.VBox;
 
-public class MethodEditingScene {
+public class MethodEditingScene extends Scene {
 
-    private Scene scene;
     private Button backButton;
 
-    public Scene getScene() {
-        return scene;
-    }
-
-    public void setScene(Scene scene) {
-        this.scene = scene;
-    }
-
-    public VBox getRoot() {
-        return (VBox) scene.getRoot();
+    public MethodEditingScene(Parent root) {
+        super(root);
     }
 
     public Button getBackButton() {

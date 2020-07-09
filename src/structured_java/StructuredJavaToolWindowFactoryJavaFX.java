@@ -14,6 +14,7 @@ import javafx.embed.swing.JFXPanel;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -47,7 +48,6 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
     private ClassOutlineScene classOutlineScene;
     private MethodEditingScene methodEditingScene;
     private JFXPanel fxPanel;
-    private SceneType currentScene;
 
     public Project getProject() {
         return project;
@@ -79,9 +79,6 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
     }
 
     protected void buildClassOutlineScene() {
-        // Initialize a new scene object.
-        classOutlineScene = new ClassOutlineScene();
-
         // Get all data in the currently opened class.
         PsiClass currentClass = Utilities.getCurrentClass(project);
         variables.clear();
@@ -110,6 +107,7 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
 
         // Start building the user interface.
         VBox root = new VBox();
+        classOutlineScene = new ClassOutlineScene(root);
         root.getChildren().clear();
         root.setSpacing(20);
         root.setPadding(new Insets(0, 0, 0, 20));
@@ -145,10 +143,8 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
             root.getChildren().add(innerClassesArea);
         }
 
-        // Set the values of the scene object.
-        Scene scene = new Scene(root);
-        scene.addEventFilter(KeyEvent.KEY_PRESSED, this);
-        classOutlineScene.setScene(scene);
+        // Add a key handler to the scene.
+        classOutlineScene.addEventFilter(KeyEvent.KEY_PRESSED, this);
     }
 
     @Override
@@ -160,7 +156,7 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
 
         // Consume the event if the focused component is NOT a text field,
         // or if the event is ENTER or TAB.
-        if (!(classOutlineScene.getScene().focusOwnerProperty().get() instanceof TextField) ||
+        if (!(classOutlineScene.focusOwnerProperty().get() instanceof TextField) ||
             event.getCode() == ENTER ||
             event.getCode() == TAB) {
             event.consume();
@@ -178,10 +174,10 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
         // to edit the first text field in the row. Otherwise switch to row selection mode.
         // If a button is focused, only activate the button.
         if (event.getCode() == ENTER) {
-            if (currentScene == SceneType.CLASS_OUTLINE && classOutlineScene.getAddVariableButton().isFocused()) {
+            if (fxPanel.getScene() instanceof ClassOutlineScene && classOutlineScene.getAddVariableButton().isFocused()) {
                 classOutlineScene.getAddVariableButton().fire();
             }
-            else if (currentScene == SceneType.METHOD_EDITING && methodEditingScene.getBackButton().isFocused()) {
+            else if (fxPanel.getScene() instanceof MethodEditingScene && methodEditingScene.getBackButton().isFocused()) {
                 methodEditingScene.getBackButton().fire();
             }
             else {
@@ -362,7 +358,7 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
 
     protected void highlightFocusedComponent() {
         // Reset the style of every component that can be highlighted.
-        setNullStyleRecursively(classOutlineScene.getRoot());
+        setNullStyleRecursively((VBox)classOutlineScene.getRoot());
 
         // Get the area of focus.
         VBox areaOfFocus = classOutlineScene.getAreas().get(keyboardFocusInfo.getFocusedAreaIndex());
@@ -659,23 +655,19 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
         root.getChildren().add(backButton);
 
         // Build the new scene object.
-        methodEditingScene = new MethodEditingScene();
+        methodEditingScene = new MethodEditingScene(root);
         methodEditingScene.setBackButton(backButton);
-        Scene scene = new Scene(root);
-        scene.addEventFilter(KeyEvent.KEY_PRESSED, this);
-        methodEditingScene.setScene(scene);
+        methodEditingScene.addEventFilter(KeyEvent.KEY_PRESSED, this);
     }
 
     public void setSceneToClassOutline() {
-        fxPanel.setScene(classOutlineScene.getScene());
+        fxPanel.setScene(classOutlineScene);
         setKeyboardFocus();
         highlightFocusedComponent();
-        currentScene = SceneType.CLASS_OUTLINE;
     }
 
     public void setSceneToMethodEditing() {
-        fxPanel.setScene(methodEditingScene.getScene());
+        fxPanel.setScene(methodEditingScene);
         methodEditingScene.getBackButton().requestFocus();
-        currentScene = SceneType.METHOD_EDITING;
     }
 }
