@@ -14,8 +14,6 @@ import javafx.embed.swing.JFXPanel;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
@@ -30,6 +28,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import static javafx.scene.input.KeyCode.*;
+import static structured_java.UserInterfaceUtilities.buildMethodRow;
+import static structured_java.UserInterfaceUtilities.getField;
 
 
 public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory, EventHandler<KeyEvent> {
@@ -149,6 +149,15 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
 
     @Override
     public void handle(KeyEvent event) {
+        if (fxPanel.getScene() instanceof  ClassOutlineScene) {
+            handleClassOutLineScene(event);
+        }
+        else if (fxPanel.getScene() instanceof MethodEditingScene) {
+            handleMethodEditingScene(event);
+        }
+    }
+
+    private void handleClassOutLineScene(KeyEvent event) {
         // Get the focused area and row area.
         VBox focusedArea = classOutlineScene.getAreas().get(keyboardFocusInfo.getFocusedAreaIndex());
         VBox focusedRowArea = (VBox) focusedArea.getChildren().get(1);
@@ -308,13 +317,23 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
         setKeyboardFocus();
     }
 
+
+    private void handleMethodEditingScene(KeyEvent event) {
+        if (methodEditingScene.getBackButton().isFocused() && event.getCode() == ENTER) {
+            methodEditingScene.getBackButton().fire();
+        }
+    }
+
+
     private void moveFocusDownForAreaOrRow() {
         moveFocusForAreaOrRow(1);
     }
 
+
     private void moveFocusUpForAreaOrRow() {
         moveFocusForAreaOrRow(-1);
     }
+
 
     private void moveFocusForAreaOrRow(int indexIncrement) {
         List<VBox> areas = classOutlineScene.getAreas();
@@ -339,6 +358,7 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
         }
     }
 
+
     private TextField getFocusedTextField() {
         List<VBox> areas = classOutlineScene.getAreas();
         VBox focusedArea = areas.get(keyboardFocusInfo.getFocusedAreaIndex());
@@ -346,6 +366,7 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
         HBox row = (HBox) focusedRowArea.getChildren().get(keyboardFocusInfo.getFocusedRow());
         return (TextField) row.getChildren().get(keyboardFocusInfo.getFocusedColumn());
     }
+
 
     private void setNullStyleRecursively(VBox node) {
         for (Node child : node.getChildren()) {
@@ -355,6 +376,7 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
             }
         }
     }
+
 
     protected void highlightFocusedComponent() {
         // Reset the style of every component that can be highlighted.
@@ -376,6 +398,7 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
         }
     }
 
+
     protected void setKeyboardFocus() {
         VBox focusedArea = classOutlineScene.getAreas().get(keyboardFocusInfo.getFocusedAreaIndex());
         VBox focusedRowArea = (VBox) focusedArea.getChildren().get(1);
@@ -394,6 +417,7 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
         }
     }
 
+
     private void moveFocusRightOneColumn() {
         VBox focusedArea = classOutlineScene.getAreas().get(keyboardFocusInfo.getFocusedAreaIndex());
         VBox focusedRowArea = (VBox) focusedArea.getChildren().get(1);
@@ -404,12 +428,14 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
         }
     }
 
+
     private void moveFocusLeftOneColumn() {
         if (keyboardFocusInfo.getFocusedColumn() > 0 &&
             keyboardFocusInfo.getFocusLevel() == KeyboardFocusInfo.FocusLevel.COLUMN) {
             keyboardFocusInfo.decrementColumn();
         }
     }
+
 
     private VBox buildVariablesArea(ClassOutlineScene scene) {
         // Build the component holding the rows.
@@ -468,8 +494,9 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
         return area;
     }
 
+
     /**
-     * This handler is attached to textfields so they can be exited with some key combination.
+     * This handler is attached to text fields so they can be exited with some key combination.
      * @return
      */
     private EventHandler<KeyEvent> getExitTextFieldHandler() {
@@ -495,12 +522,13 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
         };
     }
 
+
     private VBox buildMethodsArea() {
         // Build the component holding the rows.
         VBox areaRowBox = new VBox();
         for (int i = 0; i < methods.size(); i++) {
             PsiMethod method = methods.get(i);
-            HBox rowBox = buildMethodRow(method, true);
+            HBox rowBox = buildMethodRow(method);
 
             // Add the row component to the area component.
             areaRowBox.getChildren().add(rowBox);
@@ -515,47 +543,6 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
         return area;
     }
 
-    private HBox buildMethodRow(PsiMethod method, boolean showAllParameters) {
-        HBox rowBox = new HBox();
-        rowBox.setSpacing(5);
-
-        // Modifiers
-        PsiElement[] modifiers = ApplicationManager.getApplication().runReadAction((Computable<PsiElement[]>) () -> method.getModifierList().getChildren());
-        for (PsiElement modifier : modifiers) {
-            rowBox.getChildren().add(getField(modifier.getText()));
-        }
-
-        // Return Type
-        boolean methodIsConstructor = ApplicationManager.getApplication().runReadAction((Computable<Boolean>) method::isConstructor);
-        if (!methodIsConstructor) {
-            String methodReturnType = ApplicationManager.getApplication().runReadAction((Computable<String>) () -> method.getReturnType().getPresentableText());
-            rowBox.getChildren().add(getField(methodReturnType));
-        }
-
-        // Build the parameters component.
-        VBox parametersListComponent = getMethodFullParametersComponent(method);
-        rowBox.getChildren().add(parametersListComponent);
-
-        // Name
-        String methodName = ApplicationManager.getApplication().runReadAction((Computable<String>) method::getName);
-        rowBox.getChildren().add(getField(methodName));
-
-        return rowBox;
-    }
-
-    private VBox getMethodFullParametersComponent(PsiMethod method) {
-        VBox parametersComponent = new VBox();
-
-        PsiParameter[] parameters = ApplicationManager.getApplication().runReadAction((Computable<PsiParameter[]>) () -> method.getParameterList().getParameters());
-        for (PsiParameter parameter : parameters) {
-            String type = ApplicationManager.getApplication().runReadAction((Computable<String>) () -> parameter.getType().getPresentableText());
-            String name = ApplicationManager.getApplication().runReadAction((Computable<String>) parameter::getName);
-            String parameterString = type + " " + name;
-            parametersComponent.getChildren().add(getField(parameterString));
-        }
-
-        return parametersComponent;
-    }
 
     private VBox buildEnumsArea() {
         // Build the component holding the rows.
@@ -594,6 +581,7 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
         return area;
     }
 
+
     private VBox buildInnerClassesArea() {
         // Build the component holding the rows.
         VBox areaRowBox = new VBox();
@@ -631,18 +619,6 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
         return area;
     }
 
-    private TextField getField(String field) {
-        TextField textField = new TextField();
-
-        // Add a listener to dynamically change the width of the text field so it matches
-        // the contents.
-        textField.textProperty().addListener((ob, o, n) -> {
-            textField.setPrefWidth(TextUtils.computeTextWidth(textField.getFont(), textField.getText(), 0.0D) + 15);
-        });
-
-        textField.setText(field);
-        return textField;
-    }
 
     private void buildMethodEditingScene(PsiMethod method) {
         // Build the scene components.
@@ -654,17 +630,23 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
         });
         root.getChildren().add(backButton);
 
+        // Method header
+        HBox methodHeader = buildMethodRow(method);
+        root.getChildren().add(methodHeader);
+
         // Build the new scene object.
         methodEditingScene = new MethodEditingScene(root);
         methodEditingScene.setBackButton(backButton);
         methodEditingScene.addEventFilter(KeyEvent.KEY_PRESSED, this);
     }
 
+
     public void setSceneToClassOutline() {
         fxPanel.setScene(classOutlineScene);
         setKeyboardFocus();
         highlightFocusedComponent();
     }
+
 
     public void setSceneToMethodEditing() {
         fxPanel.setScene(methodEditingScene);
