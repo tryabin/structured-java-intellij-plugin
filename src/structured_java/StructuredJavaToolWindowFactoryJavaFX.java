@@ -16,6 +16,7 @@ import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.HBox;
@@ -623,6 +624,8 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
     private void buildMethodEditingScene(PsiMethod method) {
         // Build the scene components.
         VBox root = new VBox();
+
+        // Back button
         Button backButton = new Button("Back");
         backButton.setOnAction(event -> {
             buildClassOutlineScene();
@@ -633,6 +636,12 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
         // Method header
         HBox methodHeader = buildMethodRow(method);
         root.getChildren().add(methodHeader);
+
+        // Method editing text field
+        TextArea methodEditingTextArea = new TextArea();
+        // methodEditingTextArea.setPrefHeight(100);
+        methodEditingTextArea.setText(method.getText());
+        root.getChildren().add(methodEditingTextArea);
 
         // Build the new scene object.
         methodEditingScene = new MethodEditingScene(root);
