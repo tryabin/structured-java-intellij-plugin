@@ -639,8 +639,8 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
 
         // Method editing text field
         TextArea methodEditingTextArea = new TextArea();
-        // methodEditingTextArea.setPrefHeight(100);
-        methodEditingTextArea.setText(method.getText());
+        String methodText = ApplicationManager.getApplication().runReadAction((Computable<String>) () -> method.getText());
+        methodEditingTextArea.setText(methodText);
         root.getChildren().add(methodEditingTextArea);
 
         // Build the new scene object.
