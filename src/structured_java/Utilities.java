@@ -7,7 +7,11 @@ import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.*;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 public class Utilities {
+
     protected static PsiClass getCurrentClass(Project p) {
         // Get the currently selected file.
         FileEditorManager manager = FileEditorManager.getInstance(p);
@@ -25,6 +29,7 @@ public class Utilities {
         return curClass[0];
     }
 
+
     protected static void waitForNumberOfVariablesInClassToChange(int originalNumberOfVariables, StructuredJavaToolWindowFactoryJavaFX ui) {
         int pollTimeMs = 50;
         while (ApplicationManager.getApplication().runReadAction((Computable<PsiField[]>) getCurrentClass(ui.getProject())::getFields).length == originalNumberOfVariables) {
@@ -34,5 +39,13 @@ public class Utilities {
                 e.printStackTrace();
             }
         }
+    }
+
+
+    protected static int findOffsetOfSubstring(String text, String substring) {
+        Pattern p = Pattern.compile(substring);
+        Matcher matcher = p.matcher(text);
+        matcher.find();
+        return matcher.start();
     }
 }
