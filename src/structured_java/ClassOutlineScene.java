@@ -13,7 +13,9 @@ import java.util.List;
 public class ClassOutlineScene extends Scene {
 
     private Button addVariableButton;
+    private Button addMethodButton;
     private TextField newVariableTextField;
+    private TextField newMethodTextField;
 
     public ClassOutlineScene(Parent root) {
         super(root);
@@ -27,12 +29,28 @@ public class ClassOutlineScene extends Scene {
         this.addVariableButton = addVariableButton;
     }
 
+    public Button getAddMethodButton() {
+        return addMethodButton;
+    }
+
+    public void setAddMethodButton(Button addMethodButton) {
+        this.addMethodButton = addMethodButton;
+    }
+
     public TextField getNewVariableTextField() {
         return newVariableTextField;
     }
 
     public void setNewVariableTextField(TextField newVariableTextField) {
         this.newVariableTextField = newVariableTextField;
+    }
+
+    public TextField getNewMethodTextField() {
+        return newMethodTextField;
+    }
+
+    public void setNewMethodTextField(TextField newMethodTextField) {
+        this.newMethodTextField = newMethodTextField;
     }
 
     public List<VBox> getAreas() {

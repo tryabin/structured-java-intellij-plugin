@@ -94,7 +94,7 @@ public class AddVariableHandler implements EventHandler<ActionEvent> {
             }
 
             // Add the new variable to the class.
-            String variableTextToInsert = "\n    " + ui.getNewVariableField().getText();
+            String variableTextToInsert = "\n    " + ui.getNewVariableText();
             editor.getDocument().insertString(offset + 1, variableTextToInsert);
         });
 

@@ -63,8 +63,12 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
 
     public KeyboardFocusInfo getKeyboardFocusInfo () { return keyboardFocusInfo; };
 
-    public TextField getNewVariableField() {
-        return classOutlineScene.getNewVariableTextField();
+    public String getNewVariableText() {
+        return classOutlineScene.getNewVariableTextField().getText();
+    }
+
+    public String getNewMethodText() {
+        return classOutlineScene.getNewMethodTextField().getText();
     }
 
     @Override
@@ -126,7 +130,7 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
         root.getChildren().add(classBox);
 
         // Build the data areas.
-        VBox variablesArea = buildVariablesArea(classOutlineScene);
+        VBox variablesArea = buildVariablesArea();
         VBox methodsArea = buildMethodsArea();
         VBox enumsArea = buildEnumsArea();
         VBox innerClassesArea = buildInnerClassesArea();
@@ -193,6 +197,9 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
         if (event.getCode() == ENTER) {
             if (fxPanel.getScene() instanceof ClassOutlineScene && classOutlineScene.getAddVariableButton().isFocused()) {
                 classOutlineScene.getAddVariableButton().fire();
+            }
+            else if (fxPanel.getScene() instanceof ClassOutlineScene && classOutlineScene.getAddMethodButton().isFocused()) {
+                classOutlineScene.getAddMethodButton().fire();
             }
             else if (fxPanel.getScene() instanceof MethodEditingScene && methodEditingScene.getBackButton().isFocused()) {
                 methodEditingScene.getBackButton().fire();
@@ -331,26 +338,6 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
         if (methodEditingScene.getBackButton().isFocused() && event.getCode() == ENTER) {
             methodEditingScene.getBackButton().fire();
         }
-
-        // Editing the method text.
-        if (methodEditingScene.getMethodTextArea().isFocused()) {
-            WriteCommandAction.runWriteCommandAction(project, () -> {
-                Editor editor = FileEditorManager.getInstance(project).getSelectedTextEditor();
-                Document document = editor.getDocument();
-
-                // Need to find the offset of the left bracket because the UI method text is just the body.
-                int offset = selectedMethod.getTextOffset();
-                int length = selectedMethod.getTextLength();
-                String currentMethodTextSansModifier = document.getText(new TextRange(offset, offset + length));
-                int leftBracketOffset = Utilities.findOffsetOfSubstring(currentMethodTextSansModifier, "\\{");
-
-                // Replace the method text in the source file.
-                String uiText = methodEditingScene.getMethodTextArea().getText();
-                int methodStartOffset = selectedMethod.getModifierList().getTextOffset();
-                document.replaceString(offset + leftBracketOffset, methodStartOffset + length, uiText);
-
-            });
-        }
     }
 
 
@@ -466,7 +453,7 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
     }
 
 
-    private VBox buildVariablesArea(ClassOutlineScene scene) {
+    private VBox buildVariablesArea() {
         // Build the component holding the rows.
         VBox areaRowBox = new VBox();
         for (PsiField variable : variables) {
@@ -505,14 +492,14 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
         // The text field for the new variable.
         TextField newVariableField = new TextField();
         newVariableRow.getChildren().add(newVariableField);
-        scene.setNewVariableTextField(newVariableField);
+        classOutlineScene.setNewVariableTextField(newVariableField);
 
         // The button to add a variable.
         Button addVariableButton = new Button("Add Variable");
         addVariableButton.setOnAction(new AddVariableHandler(this));
         newVariableRow.getChildren().add(addVariableButton);
         areaRowBox.getChildren().add(newVariableRow);
-        scene.setAddVariableButton(addVariableButton);
+        classOutlineScene.setAddVariableButton(addVariableButton);
 
         // Build the root component of the area.
         VBox area = new VBox();
@@ -555,6 +542,8 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
     private VBox buildMethodsArea() {
         // Build the component holding the rows.
         VBox areaRowBox = new VBox();
+
+        // Create a row for each method.
         for (int i = 0; i < methods.size(); i++) {
             PsiMethod method = methods.get(i);
             HBox rowBox = buildMethodRow(method);
@@ -562,6 +551,17 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
             // Add the row component to the area component.
             areaRowBox.getChildren().add(rowBox);
         }
+
+        // Create a row for creating a new method.
+        TextField newMethodField = new TextField();
+        Button addMethodButton = new Button("Add Method");
+        addMethodButton.setOnAction(new AddMethodHandler(this));
+        HBox newMethodRowBox = new HBox();
+        newMethodRowBox.getChildren().add(newMethodField);
+        newMethodRowBox.getChildren().add(addMethodButton);
+        areaRowBox.getChildren().add(newMethodRowBox);
+        classOutlineScene.setNewMethodTextField(newMethodField);
+        classOutlineScene.setAddMethodButton(addMethodButton);
 
         // Build the root component of the area.
         VBox area = new VBox();
@@ -668,6 +668,13 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
         // Create the method editing text field
         TextArea methodTextArea = new TextArea();
 
+        // Set the text in the method editing area to be the body of the selected method.
+        WriteCommandAction.runWriteCommandAction(project, () -> {
+            String methodText = method.getBody().getText();
+            methodTextArea.setText(methodText);
+            root.getChildren().add(methodTextArea);
+        });
+
         // Add a text listener to the method editing text area.
         methodTextArea.textProperty().addListener((observable, oldValue, newValue) ->
         {
@@ -676,24 +683,18 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
                 Document document = editor.getDocument();
 
                 // Need to find the offset of the left bracket because the UI method text is just the body.
-                int offset = selectedMethod.getTextOffset();
-                int length = selectedMethod.getTextLength();
-                String currentMethodTextSansModifier = document.getText(new TextRange(offset, offset + length));
-                int leftBracketOffset = Utilities.findOffsetOfSubstring(currentMethodTextSansModifier, "\\{");
+                // int offset = selectedMethod.getTextOffset();
+                // int length = selectedMethod.getTextLength();
+                // String currentMethodTextSansModifier = document.getText(new TextRange(offset, offset + length));
+                // int leftBracketOffset = Utilities.findOffsetOfSubstring(currentMethodTextSansModifier, "\\{");
+                int leftBracketOffset = Utilities.findOffsetOfSubstring(document.getText(selectedMethod.getTextRange()), "\\{");
 
                 // Replace the method text in the source file.
                 String uiText = methodEditingScene.getMethodTextArea().getText();
-                int methodStartOffset = selectedMethod.getModifierList().getTextOffset();
-                document.replaceString(offset + leftBracketOffset, methodStartOffset + length, uiText);
-
+                // int methodStartOffset = selectedMethod.getModifierList().getTextOffset();
+                document.replaceString(selectedMethod.getTextRange().getStartOffset() + leftBracketOffset, selectedMethod.getTextRange().getEndOffset(), uiText);
+                // document.replaceString(offset + leftBracketOffset, methodStartOffset + length, uiText);
             });
-        });
-
-        // Set the text in the method editing area to be the body of the selected method.
-        WriteCommandAction.runWriteCommandAction(project, () -> {
-            String methodText = method.getBody().getText();
-            methodTextArea.setText(methodText);
-            root.getChildren().add(methodTextArea);
         });
 
 

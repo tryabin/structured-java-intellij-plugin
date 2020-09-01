@@ -42,6 +42,18 @@ public class Utilities {
     }
 
 
+    protected static void waitForNumberOfMethodsInClassToChange(int originalNumberOfMethods, StructuredJavaToolWindowFactoryJavaFX ui) {
+        int pollTimeMs = 50;
+        while (ApplicationManager.getApplication().runReadAction((Computable<PsiMethod[]>) getCurrentClass(ui.getProject())::getMethods).length == originalNumberOfMethods) {
+            try {
+                Thread.sleep(pollTimeMs);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+
     protected static int findOffsetOfSubstring(String text, String substring) {
         Pattern p = Pattern.compile(substring);
         Matcher matcher = p.matcher(text);
