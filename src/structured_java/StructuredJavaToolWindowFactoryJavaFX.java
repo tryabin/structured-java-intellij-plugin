@@ -8,7 +8,6 @@ import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Computable;
-import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowFactory;
 import com.intellij.psi.*;
@@ -309,17 +308,31 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
             if (keyboardFocusInfo.getFocusLevel() == KeyboardFocusInfo.FocusLevel.ROW) {
 
                 // If the focus is not on the Add Variable row then delete the focused variable.
-                if (keyboardFocusInfo.getFocusedRow() != focusedRowArea.getChildren().size() - 1) {
-                    // Delete the variable from the source code.
-                    PsiField variableToDelete = variables.get(keyboardFocusInfo.getFocusedRow());
-                    WriteCommandAction.writeCommandAction(project).run(variableToDelete::delete);
+                switch (currentArea) {
+                    case VARIABLE: {
+                        PsiField variableToDelete = variables.get(keyboardFocusInfo.getFocusedRow());
+                        WriteCommandAction.writeCommandAction(project).run(variableToDelete::delete);
 
-                    // Wait until the number of variables in the class changes.
-                    Utilities.waitForNumberOfVariablesInClassToChange(variables.size(), this);
+                        // Wait until the number of variables in the class changes.
+                        Utilities.waitForNumberOfVariablesInClassToChange(variables.size(), this);
 
-                    // Rebuild the UI.
-                    buildClassOutlineScene();
-                    setSceneToClassOutline();
+                        // Rebuild the UI.
+                        buildClassOutlineScene();
+                        setSceneToClassOutline();
+                        break;
+                    }
+                    case METHOD: {
+                        PsiMethod methodToDelete = methods.get(keyboardFocusInfo.getFocusedRow());
+                        WriteCommandAction.writeCommandAction(project).run(methodToDelete::delete);
+
+                        // Wait until the number of methods in the class changes.
+                        Utilities.waitForNumberOfMethodsInClassToChange(variables.size(), this);
+
+                        // Rebuild the UI.
+                        buildClassOutlineScene();
+                        setSceneToClassOutline();
+                        break;
+                    }
                 }
             }
         }
@@ -675,7 +688,8 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
             root.getChildren().add(methodTextArea);
         });
 
-        // Add a text listener to the method editing text area.
+        // Add a text listener to the method editing text area so the source code is updated
+        // as soon as the text in the method editing area changes.
         methodTextArea.textProperty().addListener((observable, oldValue, newValue) ->
         {
             WriteCommandAction.runWriteCommandAction(project, () -> {
@@ -683,17 +697,11 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
                 Document document = editor.getDocument();
 
                 // Need to find the offset of the left bracket because the UI method text is just the body.
-                // int offset = selectedMethod.getTextOffset();
-                // int length = selectedMethod.getTextLength();
-                // String currentMethodTextSansModifier = document.getText(new TextRange(offset, offset + length));
-                // int leftBracketOffset = Utilities.findOffsetOfSubstring(currentMethodTextSansModifier, "\\{");
                 int leftBracketOffset = Utilities.findOffsetOfSubstring(document.getText(selectedMethod.getTextRange()), "\\{");
 
                 // Replace the method text in the source file.
                 String uiText = methodEditingScene.getMethodTextArea().getText();
-                // int methodStartOffset = selectedMethod.getModifierList().getTextOffset();
                 document.replaceString(selectedMethod.getTextRange().getStartOffset() + leftBracketOffset, selectedMethod.getTextRange().getEndOffset(), uiText);
-                // document.replaceString(offset + leftBracketOffset, methodStartOffset + length, uiText);
             });
         });
 
