@@ -135,14 +135,10 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
         VBox innerClassesArea = buildInnerClassesArea();
 
         // The component holding the variables.
-        if (!variables.isEmpty()) {
-            root.getChildren().add(variablesArea);
-        }
+        root.getChildren().add(variablesArea);
 
         // The component holding the methods.
-        if (!methods.isEmpty()) {
-            root.getChildren().add(methodsArea);
-        }
+        root.getChildren().add(methodsArea);
 
         // The component holding inner classes that are enums.
         if (!enums.isEmpty()) {
@@ -326,7 +322,7 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
                         WriteCommandAction.writeCommandAction(project).run(methodToDelete::delete);
 
                         // Wait until the number of methods in the class changes.
-                        Utilities.waitForNumberOfMethodsInClassToChange(variables.size(), this);
+                        Utilities.waitForNumberOfMethodsInClassToChange(methods.size(), this);
 
                         // Rebuild the UI.
                         buildClassOutlineScene();

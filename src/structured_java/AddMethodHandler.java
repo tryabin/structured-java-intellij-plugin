@@ -31,21 +31,34 @@ public class AddMethodHandler implements EventHandler<ActionEvent> {
         PsiClass currentClass = getCurrentClass(ui.getProject());
         PsiMethod[] psiMethods = ApplicationManager.getApplication().runReadAction((Computable<PsiMethod[]>) currentClass::getMethods);
         List<PsiMethod> methods = Arrays.asList(psiMethods);
-        PsiMethod lastMethod = methods.get(methods.size() - 1);
+        PsiField[] psiFields = ApplicationManager.getApplication().runReadAction((Computable<PsiField[]>) currentClass::getFields);
+        List<PsiField> variables = Arrays.asList(psiFields);
 
         // Modify the source code to add the method.
         WriteCommandAction.writeCommandAction(ui.getProject()).run(() -> {
+            int offsetToInsertMethod;
 
-            // Get the class source text.
-            Editor editor =  FileEditorManager.getInstance(ui.getProject()).getSelectedTextEditor();
-            String sourceText = editor.getDocument().getText();
+            // Insert the method after the last method if it exists.
+            if (methods.size() > 0) {
+                PsiMethod lastMethod = methods.get(methods.size() - 1);
+                offsetToInsertMethod = lastMethod.getTextRange().getEndOffset();
+            }
 
-            // Find the offset of the end of the last method.
-            int endOffset = lastMethod.getTextRange().getEndOffset();
+            // Otherwise insert the method after the last variable if it exists.
+            else if (variables.size() > 0) {
+                PsiField lastVariable = variables.get(variables.size() - 1);
+                offsetToInsertMethod = lastVariable.getTextRange().getEndOffset();
+            }
+
+            // Otherwise add the method on the line after the class left brace.
+            else {
+                offsetToInsertMethod = currentClass.getLBrace().getTextOffset() + 1;
+            }
 
             // Add the new method to the class.
-            String methodTextToInsert = "\n    " + ui.getNewMethodText() + "\n";
-            editor.getDocument().insertString(endOffset + 1, methodTextToInsert);
+            Editor editor =  FileEditorManager.getInstance(ui.getProject()).getSelectedTextEditor();
+            String methodTextToInsert = "\n\n    " + ui.getNewMethodText() + "\n";
+            editor.getDocument().insertString(offsetToInsertMethod, methodTextToInsert);
         });
 
         // Wait until the number of methods in the class changes.
