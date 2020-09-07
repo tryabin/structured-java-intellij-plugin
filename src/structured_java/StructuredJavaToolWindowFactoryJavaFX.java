@@ -13,14 +13,12 @@ import com.intellij.openapi.wm.ToolWindowFactory;
 import com.intellij.psi.*;
 import com.intellij.psi.search.searches.ReferencesSearch;
 import javafx.application.Platform;
+import javafx.collections.FXCollections;
 import javafx.embed.swing.JFXPanel;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -62,8 +60,8 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
 
     public KeyboardFocusInfo getKeyboardFocusInfo () { return keyboardFocusInfo; };
 
-    public String getNewVariableText() {
-        return classOutlineScene.getNewVariableTextField().getText();
+    public ClassOutlineScene getClassOutlineScene() {
+        return classOutlineScene;
     }
 
     public String getNewMethodText() {
@@ -498,10 +496,27 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
         // The row for adding a new variable.
         HBox newVariableRow = new HBox();
 
-        // The text field for the new variable.
-        TextField newVariableField = new TextField();
-        newVariableRow.getChildren().add(newVariableField);
-        classOutlineScene.setNewVariableTextField(newVariableField);
+        // The access modifier dropdown.
+        ComboBox<String> accessModifierBox = new ComboBox<>(FXCollections.observableArrayList("private", "protected", "public", "None"));
+        accessModifierBox.getSelectionModel().selectFirst();
+        newVariableRow.getChildren().add(accessModifierBox);
+        classOutlineScene.setNewVariableAccessModifierBox(accessModifierBox);
+
+        // Static or non-stick dropdown.
+        ComboBox<String> staticModifierBox = new ComboBox<>(FXCollections.observableArrayList("non-static", "static"));
+        staticModifierBox.getSelectionModel().selectFirst();
+        newVariableRow.getChildren().add(staticModifierBox);
+        classOutlineScene.setNewVariableStaticModifierBox(staticModifierBox);
+
+        // Type text field.
+        TextField typeField = new TextField("<Type>");
+        newVariableRow.getChildren().add(typeField);
+        classOutlineScene.setNewVariableTypeField(typeField);
+
+        // Name field.
+        TextField nameField = new TextField("<Name>");
+        newVariableRow.getChildren().add(nameField);
+        classOutlineScene.setNewVariableNameField(nameField);
 
         // The button to add a variable.
         Button addVariableButton = new Button("Add Variable");

@@ -4,6 +4,7 @@ import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 
@@ -14,7 +15,10 @@ public class ClassOutlineScene extends Scene {
 
     private Button addVariableButton;
     private Button addMethodButton;
-    private TextField newVariableTextField;
+    private ComboBox<String> newVariableAccessModifierBox;
+    private ComboBox<String> newVariableStaticModifierBox;
+    private TextField newVariableTypeField;
+    private TextField newVariableNameField;
     private TextField newMethodTextField;
 
     public ClassOutlineScene(Parent root) {
@@ -37,12 +41,36 @@ public class ClassOutlineScene extends Scene {
         this.addMethodButton = addMethodButton;
     }
 
-    public TextField getNewVariableTextField() {
-        return newVariableTextField;
+    public ComboBox<String> getNewVariableAccessModifierBox() {
+        return newVariableAccessModifierBox;
     }
 
-    public void setNewVariableTextField(TextField newVariableTextField) {
-        this.newVariableTextField = newVariableTextField;
+    public void setNewVariableAccessModifierBox(ComboBox<String> newVariableAccessModifierBox) {
+        this.newVariableAccessModifierBox = newVariableAccessModifierBox;
+    }
+
+    public ComboBox<String> getNewVariableStaticModifierBox() {
+        return newVariableStaticModifierBox;
+    }
+
+    public void setNewVariableStaticModifierBox(ComboBox<String> newVariableStaticModifierBox) {
+        this.newVariableStaticModifierBox = newVariableStaticModifierBox;
+    }
+
+    public TextField getNewVariableTypeField() {
+        return newVariableTypeField;
+    }
+
+    public void setNewVariableTypeField(TextField newVariableTypeField) {
+        this.newVariableTypeField = newVariableTypeField;
+    }
+
+    public TextField getNewVariableNameField() {
+        return newVariableNameField;
+    }
+
+    public void setNewVariableNameField(TextField newVariableNameField) {
+        this.newVariableNameField = newVariableNameField;
     }
 
     public TextField getNewMethodTextField() {
@@ -60,5 +88,17 @@ public class ClassOutlineScene extends Scene {
             areas.add((VBox) rootChildren.get(i));
         }
         return areas;
+    }
+
+    public String getNewVariableSourceText() {
+        String sourceText = "";
+        sourceText += newVariableAccessModifierBox.getValue() + " ";
+        if (newVariableStaticModifierBox.getValue().equals("static")) {
+            sourceText += newVariableStaticModifierBox.getValue() + " ";
+        }
+        sourceText += newVariableTypeField.getText() + " ";
+        sourceText += newVariableNameField.getText() + ";";
+
+        return sourceText;
     }
 }
