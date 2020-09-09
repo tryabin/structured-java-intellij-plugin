@@ -168,11 +168,19 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
         VBox focusedRowArea = (VBox) focusedArea.getChildren().get(1);
         Area currentArea = areaOrdering.get(keyboardFocusInfo.getFocusedAreaIndex());
 
-        // Consume the event if the focused component is NOT a text field,
-        // or if the event is ENTER or TAB.
-        if (!(classOutlineScene.focusOwnerProperty().get() instanceof TextField) ||
-            event.getCode() == ENTER ||
-            event.getCode() == TAB) {
+        // Consume the event in certain situations to prevent undesirable effects.
+        boolean enterPressed = event.getCode() == ENTER;
+        boolean tabPressed = event.getCode() == TAB;
+        boolean leftOrRightPressed = event.getCode() == LEFT || event.getCode() == RIGHT;
+        boolean textFieldFocused = classOutlineScene.focusOwnerProperty().get() instanceof TextField;
+        boolean comboBoxFocused = classOutlineScene.focusOwnerProperty().get() instanceof ComboBox;
+        if (!textFieldFocused && !comboBoxFocused) {
+            event.consume();
+        }
+        if (textFieldFocused && (tabPressed || enterPressed)) {
+            event.consume();
+        }
+        if (comboBoxFocused && (leftOrRightPressed || tabPressed || enterPressed)) {
             event.consume();
         }
 
@@ -188,14 +196,14 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
         // to edit the first text field in the row. Otherwise switch to row selection mode.
         // If a button is focused, only activate the button.
         if (event.getCode() == ENTER) {
-            if (fxPanel.getScene() instanceof ClassOutlineScene && classOutlineScene.getAddVariableButton().isFocused()) {
+            if (classOutlineScene.getAddVariableButton().isFocused()) {
                 classOutlineScene.getAddVariableButton().fire();
             }
-            else if (fxPanel.getScene() instanceof ClassOutlineScene && classOutlineScene.getAddMethodButton().isFocused()) {
+            else if (classOutlineScene.getAddMethodButton().isFocused()) {
                 classOutlineScene.getAddMethodButton().fire();
             }
-            else if (fxPanel.getScene() instanceof MethodEditingScene && methodEditingScene.getBackButton().isFocused()) {
-                methodEditingScene.getBackButton().fire();
+            else if (classOutlineScene.getNewVariableAccessModifierBox().isFocused()) {
+                classOutlineScene.getNewVariableAccessModifierBox().fireEvent(event);
             }
             else {
                 switch (keyboardFocusInfo.getFocusLevel()) {
@@ -473,6 +481,9 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
             // Modifiers
             PsiElement[] modifiers = ApplicationManager.getApplication().runReadAction((Computable<PsiElement[]>) () -> variable.getModifierList().getChildren());
             for (PsiElement modifier : modifiers) {
+                if (modifier.getText().trim().isEmpty()) {
+                    continue;
+                }
                 currentFields.add(modifier.getText());
             }
 
