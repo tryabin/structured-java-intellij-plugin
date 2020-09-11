@@ -19,6 +19,7 @@ public class ClassOutlineScene extends Scene {
     private ComboBox<String> newVariableStaticModifierBox;
     private TextField newVariableTypeField;
     private TextField newVariableNameField;
+    private TextField newVariableInitialValueField;
     private TextField newMethodTextField;
 
     public ClassOutlineScene(Parent root) {
@@ -73,6 +74,14 @@ public class ClassOutlineScene extends Scene {
         this.newVariableNameField = newVariableNameField;
     }
 
+    public TextField getNewVariableInitialValueField() {
+        return newVariableInitialValueField;
+    }
+
+    public void setNewVariableInitialValueField(TextField newVariableInitialValueField) {
+        this.newVariableInitialValueField = newVariableInitialValueField;
+    }
+
     public TextField getNewMethodTextField() {
         return newMethodTextField;
     }
@@ -97,7 +106,8 @@ public class ClassOutlineScene extends Scene {
             sourceText += newVariableStaticModifierBox.getValue() + " ";
         }
         sourceText += newVariableTypeField.getText() + " ";
-        sourceText += newVariableNameField.getText() + ";";
+        sourceText += newVariableNameField.getText() + " = ";
+        sourceText += newVariableInitialValueField.getText() + ";";
 
         return sourceText;
     }

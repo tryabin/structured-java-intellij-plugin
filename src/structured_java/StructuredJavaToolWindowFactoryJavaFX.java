@@ -258,6 +258,13 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
             if (!event.isShiftDown()) {
                 if (keyboardFocusInfo.getFocusLevel() == KeyboardFocusInfo.FocusLevel.COLUMN) {
                     moveFocusRightOneColumn();
+
+                    // Skip focusing on the equals sign in the row to add a variable.
+                    if (currentArea == Area.VARIABLE &&
+                        keyboardFocusInfo.getFocusedRow() == variables.size() &&
+                        keyboardFocusInfo.getFocusedColumn() == 4) {
+                        moveFocusRightOneColumn();
+                    }
                 }
                 else {
                     moveFocusDownForAreaOrRow();
@@ -266,6 +273,13 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
             else {
                 if (keyboardFocusInfo.getFocusLevel() == KeyboardFocusInfo.FocusLevel.COLUMN) {
                     moveFocusLeftOneColumn();
+
+                    // Skip focusing on the equals sign in the row to add a variable.
+                    if (currentArea == Area.VARIABLE &&
+                        keyboardFocusInfo.getFocusedRow() == variables.size() &&
+                        keyboardFocusInfo.getFocusedColumn() == 4) {
+                        moveFocusLeftOneColumn();
+                    }
                 }
                 else {
                     moveFocusUpForAreaOrRow();
@@ -528,6 +542,15 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
         TextField nameField = new TextField("<Name>");
         newVariableRow.getChildren().add(nameField);
         classOutlineScene.setNewVariableNameField(nameField);
+
+        // '=' label.
+        Label equalsSign = new Label(" = ");
+        newVariableRow.getChildren().add(equalsSign);
+
+        // Initial value field.
+        TextField initialValueField = new TextField("<Initial Value>");
+        newVariableRow.getChildren().add(initialValueField);
+        classOutlineScene.setNewVariableInitialValueField(initialValueField);
 
         // The button to add a variable.
         Button addVariableButton = new Button("Add Variable");
