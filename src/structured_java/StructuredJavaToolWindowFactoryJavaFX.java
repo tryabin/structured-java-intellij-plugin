@@ -265,6 +265,9 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
                         keyboardFocusInfo.getFocusedColumn() == 4) {
                         moveFocusRightOneColumn();
                     }
+
+                    // If the focused component is a text field then highlight the text.
+                    selectAllTextIfNavigatedToTextField();
                 }
                 else {
                     moveFocusDownForAreaOrRow();
@@ -280,6 +283,9 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
                         keyboardFocusInfo.getFocusedColumn() == 4) {
                         moveFocusLeftOneColumn();
                     }
+
+                    // If the focused component is a text field then highlight the text.
+                    selectAllTextIfNavigatedToTextField();
                 }
                 else {
                     moveFocusUpForAreaOrRow();
@@ -440,6 +446,14 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
                 VBox rowArea = (VBox) areaOfFocus.getChildren().get(1);
                 rowArea.getChildren().get(keyboardFocusInfo.getFocusedRow()).setStyle(DEFAULT_HIGHLIGHT_COLOR);
                 break;
+        }
+    }
+
+
+    private void selectAllTextIfNavigatedToTextField() {
+        if (classOutlineScene.focusOwnerProperty().get() instanceof TextField) {
+            TextField focusedTextField = (TextField) classOutlineScene.focusOwnerProperty().get();
+            focusedTextField.selectAll();
         }
     }
 
