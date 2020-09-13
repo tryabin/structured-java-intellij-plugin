@@ -9,7 +9,9 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class ClassOutlineScene extends Scene {
 
@@ -21,6 +23,7 @@ public class ClassOutlineScene extends Scene {
     private TextField newVariableNameField;
     private TextField newVariableInitialValueField;
     private TextField newMethodTextField;
+    private Set<TextField> variableNameTextFields = new HashSet<>();
 
     public ClassOutlineScene(Parent root) {
         super(root);
@@ -90,6 +93,14 @@ public class ClassOutlineScene extends Scene {
         this.newMethodTextField = newMethodTextField;
     }
 
+    public Set<TextField> getVariableNameTextFields() {
+        return variableNameTextFields;
+    }
+
+    public void setVariableNameTextFields(Set<TextField> variableNameTextFields) {
+        this.variableNameTextFields = variableNameTextFields;
+    }
+
     public List<VBox> getAreas() {
         List<VBox> areas = new ArrayList<>();
         List<Node> rootChildren = ((VBox)getRoot()).getChildren();
@@ -106,8 +117,14 @@ public class ClassOutlineScene extends Scene {
             sourceText += newVariableStaticModifierBox.getValue() + " ";
         }
         sourceText += newVariableTypeField.getText() + " ";
-        sourceText += newVariableNameField.getText() + " = ";
-        sourceText += newVariableInitialValueField.getText() + ";";
+        sourceText += newVariableNameField.getText();
+
+        // Add the initial value if it is non-empty.
+        if (newVariableInitialValueField.getText().trim().length() > 0) {
+            sourceText += " = " + newVariableInitialValueField.getText();
+        }
+
+        sourceText += ";";
 
         return sourceText;
     }

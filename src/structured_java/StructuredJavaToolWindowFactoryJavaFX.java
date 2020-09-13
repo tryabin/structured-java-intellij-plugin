@@ -226,9 +226,13 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
                         break;
                     }
                     case COLUMN: {
-                        // Rename the variable if the focused column is the last column, which should be the name.
+                        // Rename the variable if the focused column is the variable or method name.
                         HBox row = (HBox) (focusedRowArea.getChildren().get(keyboardFocusInfo.getFocusedRow()));
-                        if (keyboardFocusInfo.getFocusedColumn() == row.getChildren().size() - 1) {
+                        if (classOutlineScene.getVariableNameTextFields().contains(classOutlineScene.focusOwnerProperty().get()) ||
+                               (keyboardFocusInfo.getFocusLevel() == KeyboardFocusInfo.FocusLevel.COLUMN &&
+                                areaOrdering.get(keyboardFocusInfo.getFocusedAreaIndex()) == Area.METHOD &&
+                                keyboardFocusInfo.getFocusedColumn() == row.getChildren().size() - 1)) {
+
                             // Get the IntelliJ reference to the thing to rename.
                             List<PsiNamedElement> psiNamedElements = dataAreas.get(keyboardFocusInfo.getFocusedAreaIndex());
                             PsiNamedElement psiElement = psiNamedElements.get(keyboardFocusInfo.getFocusedRow());
@@ -503,30 +507,39 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
             HBox rowBox = new HBox();
             rowBox.setSpacing(5);
 
-            // Get a list of strings for all of the variable's fields.
-            List<String> currentFields = new ArrayList<>();
-
             // Modifiers
             PsiElement[] modifiers = ApplicationManager.getApplication().runReadAction((Computable<PsiElement[]>) () -> variable.getModifierList().getChildren());
             for (PsiElement modifier : modifiers) {
                 if (modifier.getText().trim().isEmpty()) {
                     continue;
                 }
-                currentFields.add(modifier.getText());
+                TextField textField = getField(modifier.getText());
+                rowBox.getChildren().add(textField);
             }
 
             // Type
             String variableType = ApplicationManager.getApplication().runReadAction((Computable<String>) () -> variable.getType().getPresentableText());
-            currentFields.add(variableType);
+            TextField variableTypeField = new TextField(variableType);
+            rowBox.getChildren().add(variableTypeField);
 
             // Name
             String variableName = ApplicationManager.getApplication().runReadAction((Computable<String>) () -> variable.getName());
-            currentFields.add(variableName);
+            TextField nameField = new TextField(variableName);
+            classOutlineScene.getVariableNameTextFields().add(nameField);
+            rowBox.getChildren().add(nameField);
 
-            // Add all of the fields as text fields to the current row.
-            for (String field : currentFields) {
-                TextField textField = getField(field);
-                rowBox.getChildren().add(textField);
+            // If the variable has an initial value, add an equals sign label and
+            // a text field for the initial value.
+            if (variable.hasInitializer()) {
+                String variableInitialValue = ApplicationManager.getApplication().runReadAction((Computable<String>) () -> variable.getInitializer().getText());
+
+                // '=' label.
+                Label equalsSign = new Label(" = ");
+                rowBox.getChildren().add(equalsSign);
+
+                // Initial value field.
+                TextField initialValueField = getField(variableInitialValue);
+                rowBox.getChildren().add(initialValueField);
             }
 
             areaRowBox.getChildren().add(rowBox);
