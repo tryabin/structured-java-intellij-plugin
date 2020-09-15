@@ -60,7 +60,6 @@ public class AddVariableHandler implements EventHandler<ActionEvent> {
         focusInfo.setFocusLevel(KeyboardFocusInfo.FocusLevel.ROW);
 
         // Rebuild the UI.
-        ui.buildClassOutlineScene();
-        ui.setSceneToClassOutline();
+        ui.rebuildClassOutlineScene();
     }
 }

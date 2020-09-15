@@ -8,6 +8,7 @@ import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Computable;
+import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowFactory;
 import com.intellij.psi.*;
@@ -80,8 +81,7 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
             keyboardFocusInfo = new KeyboardFocusInfo();
 
             // Build the scene.
-            buildClassOutlineScene();
-            setSceneToClassOutline();
+            rebuildClassOutlineScene();
         }));
 
         component.getParent().add(fxPanel);
@@ -226,28 +226,11 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
                         break;
                     }
                     case COLUMN: {
-                        // Rename the variable if the focused column is the variable or method name.
-                        HBox row = (HBox) (focusedRowArea.getChildren().get(keyboardFocusInfo.getFocusedRow()));
-                        if (classOutlineScene.getVariableNameTextFields().contains(classOutlineScene.focusOwnerProperty().get()) ||
-                               (keyboardFocusInfo.getFocusLevel() == KeyboardFocusInfo.FocusLevel.COLUMN &&
-                                areaOrdering.get(keyboardFocusInfo.getFocusedAreaIndex()) == Area.METHOD &&
-                                keyboardFocusInfo.getFocusedColumn() == row.getChildren().size() - 1)) {
+                        // Do a rename operation if applicable.
+                        handleRename();
 
-                            // Get the IntelliJ reference to the thing to rename.
-                            List<PsiNamedElement> psiNamedElements = dataAreas.get(keyboardFocusInfo.getFocusedAreaIndex());
-                            PsiNamedElement psiElement = psiNamedElements.get(keyboardFocusInfo.getFocusedRow());
-
-                            // Run the rename refactor function.
-                            String newName = getFocusedTextField().getText();
-                            Runnable renameVariableAction = () ->
-                            {
-                                for (PsiReference reference : ReferencesSearch.search(psiElement)) {
-                                    reference.handleElementRename(newName);
-                                }
-                                psiElement.setName(newName);
-                            };
-                            WriteCommandAction.runWriteCommandAction(project, renameVariableAction);
-                        }
+                        // Change the initial value of a variable if applicable.
+                        handleVariableInitialValueChange();
 
                         // Move the focus to row selection.
                         keyboardFocusInfo.setFocusLevel(KeyboardFocusInfo.FocusLevel.ROW);
@@ -263,10 +246,8 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
                 if (keyboardFocusInfo.getFocusLevel() == KeyboardFocusInfo.FocusLevel.COLUMN) {
                     moveFocusRightOneColumn();
 
-                    // Skip focusing on the equals sign in the row to add a variable.
-                    if (currentArea == Area.VARIABLE &&
-                        keyboardFocusInfo.getFocusedRow() == variables.size() &&
-                        keyboardFocusInfo.getFocusedColumn() == 4) {
+                    // Skip focusing on labels.
+                    if (classOutlineScene.focusOwnerProperty().get() instanceof Label) {
                         moveFocusRightOneColumn();
                     }
 
@@ -281,10 +262,8 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
                 if (keyboardFocusInfo.getFocusLevel() == KeyboardFocusInfo.FocusLevel.COLUMN) {
                     moveFocusLeftOneColumn();
 
-                    // Skip focusing on the equals sign in the row to add a variable.
-                    if (currentArea == Area.VARIABLE &&
-                        keyboardFocusInfo.getFocusedRow() == variables.size() &&
-                        keyboardFocusInfo.getFocusedColumn() == 4) {
+                    // Skip focusing on labels.
+                    if (classOutlineScene.focusOwnerProperty().get() instanceof Label) {
                         moveFocusLeftOneColumn();
                     }
 
@@ -343,8 +322,7 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
                         Utilities.waitForNumberOfVariablesInClassToChange(variables.size(), this);
 
                         // Rebuild the UI.
-                        buildClassOutlineScene();
-                        setSceneToClassOutline();
+                        rebuildClassOutlineScene();
                         break;
                     }
                     case METHOD: {
@@ -355,8 +333,7 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
                         Utilities.waitForNumberOfMethodsInClassToChange(methods.size(), this);
 
                         // Rebuild the UI.
-                        buildClassOutlineScene();
-                        setSceneToClassOutline();
+                        rebuildClassOutlineScene();
                         break;
                     }
                 }
@@ -368,6 +345,68 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
 
         // Set the keyboard focus to the correct element.
         setKeyboardFocus();
+    }
+
+
+    private void handleRename() {
+
+        // Get the focused area and row area.
+        VBox focusedArea = classOutlineScene.getAreas().get(keyboardFocusInfo.getFocusedAreaIndex());
+        VBox focusedRowArea = (VBox) focusedArea.getChildren().get(1);
+        HBox row = (HBox) (focusedRowArea.getChildren().get(keyboardFocusInfo.getFocusedRow()));
+
+        // Rename the variable if the focused column is the variable or method name.
+        if (classOutlineScene.getVariableNameTextFields().contains(classOutlineScene.focusOwnerProperty().get()) ||
+               (keyboardFocusInfo.getFocusLevel() == KeyboardFocusInfo.FocusLevel.COLUMN &&
+                areaOrdering.get(keyboardFocusInfo.getFocusedAreaIndex()) == Area.METHOD &&
+                keyboardFocusInfo.getFocusedColumn() == row.getChildren().size() - 1)) {
+
+            // Get the IntelliJ reference to the thing to rename.
+            List<PsiNamedElement> psiNamedElements = dataAreas.get(keyboardFocusInfo.getFocusedAreaIndex());
+            PsiNamedElement psiElement = psiNamedElements.get(keyboardFocusInfo.getFocusedRow());
+
+            // Run the rename refactor function.
+            String newName = getFocusedTextField().getText();
+            Runnable renameVariableAction = () ->
+            {
+                for (PsiReference reference : ReferencesSearch.search(psiElement)) {
+                    reference.handleElementRename(newName);
+                }
+                psiElement.setName(newName);
+            };
+            WriteCommandAction.runWriteCommandAction(project, renameVariableAction);
+        }
+    }
+
+
+    private void handleVariableInitialValueChange() {
+
+        // Change the initial value of the variable if the focused column is an initial value text field.
+        if (classOutlineScene.getVariableInitialValueTextFields().contains(classOutlineScene.focusOwnerProperty().get())) {
+            Runnable setInitialValueAction = () ->
+            {
+                PsiField currentVariable = variables.get(keyboardFocusInfo.getFocusedRow());
+                String newInitialValueText = getFocusedTextField().getText();
+                PsiExpression newInitialValue = null;
+
+                // Create a new PsiExpression from the new initial value if it is non-empty.
+                if (!newInitialValueText.trim().isEmpty()) {
+                    newInitialValue = PsiElementFactory.getInstance(project).createExpressionFromText(newInitialValueText, currentVariable.getInitializer());
+                }
+                currentVariable.setInitializer(newInitialValue);
+            };
+            WriteCommandAction.runWriteCommandAction(project, setInitialValueAction);
+
+            // Rebuild the UI.
+            keyboardFocusInfo.setFocusLevel(KeyboardFocusInfo.FocusLevel.ROW);
+            rebuildClassOutlineScene();
+        }
+    }
+
+
+    protected void rebuildClassOutlineScene() {
+        buildClassOutlineScene();
+        setSceneToClassOutline();
     }
 
 
@@ -411,6 +450,8 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
                 break;
             }
         }
+
+        setKeyboardFocus();
     }
 
 
@@ -489,6 +530,8 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
             keyboardFocusInfo.getFocusLevel() == KeyboardFocusInfo.FocusLevel.COLUMN) {
             keyboardFocusInfo.incrementColumn();
         }
+
+        setKeyboardFocus();
     }
 
 
@@ -497,6 +540,8 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
             keyboardFocusInfo.getFocusLevel() == KeyboardFocusInfo.FocusLevel.COLUMN) {
             keyboardFocusInfo.decrementColumn();
         }
+
+        setKeyboardFocus();
     }
 
 
@@ -539,6 +584,7 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
 
                 // Initial value field.
                 TextField initialValueField = getField(variableInitialValue);
+                classOutlineScene.getVariableInitialValueTextFields().add(initialValueField);
                 rowBox.getChildren().add(initialValueField);
             }
 
@@ -740,10 +786,7 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
 
         // Back button
         Button backButton = new Button("Back");
-        backButton.setOnAction(event -> {
-            buildClassOutlineScene();
-            setSceneToClassOutline();
-        });
+        backButton.setOnAction(event -> rebuildClassOutlineScene());
         root.getChildren().add(backButton);
 
         // Method header

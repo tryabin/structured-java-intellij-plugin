@@ -24,6 +24,7 @@ public class ClassOutlineScene extends Scene {
     private TextField newVariableInitialValueField;
     private TextField newMethodTextField;
     private Set<TextField> variableNameTextFields = new HashSet<>();
+    private Set<TextField> variableInitialValueTextFields = new HashSet<>();
 
     public ClassOutlineScene(Parent root) {
         super(root);
@@ -83,6 +84,14 @@ public class ClassOutlineScene extends Scene {
 
     public void setNewVariableInitialValueField(TextField newVariableInitialValueField) {
         this.newVariableInitialValueField = newVariableInitialValueField;
+    }
+
+    public Set<TextField> getVariableInitialValueTextFields() {
+        return variableInitialValueTextFields;
+    }
+
+    public void setVariableInitialValueTextFields(Set<TextField> variableInitialValueTextFields) {
+        this.variableInitialValueTextFields = variableInitialValueTextFields;
     }
 
     public TextField getNewMethodTextField() {
