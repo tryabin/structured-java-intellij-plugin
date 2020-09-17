@@ -8,7 +8,6 @@ import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Computable;
-import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowFactory;
 import com.intellij.psi.*;
@@ -163,9 +162,7 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
     }
 
     private void handleClassOutLineScene(KeyEvent event) {
-        // Get the focused area and row area.
-        VBox focusedArea = classOutlineScene.getAreas().get(keyboardFocusInfo.getFocusedAreaIndex());
-        VBox focusedRowArea = (VBox) focusedArea.getChildren().get(1);
+        // Get the focused area.
         Area currentArea = areaOrdering.get(keyboardFocusInfo.getFocusedAreaIndex());
 
         // Consume the event in certain situations to prevent undesirable effects.
@@ -196,11 +193,8 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
         // to edit the first text field in the row. Otherwise switch to row selection mode.
         // If a button is focused, only activate the button.
         if (event.getCode() == ENTER) {
-            if (classOutlineScene.getAddVariableButton().isFocused()) {
-                classOutlineScene.getAddVariableButton().fire();
-            }
-            else if (classOutlineScene.getAddMethodButton().isFocused()) {
-                classOutlineScene.getAddMethodButton().fire();
+            if(classOutlineScene.focusOwnerProperty().get() instanceof Button) {
+                ((Button)classOutlineScene.focusOwnerProperty().get()).fire();
             }
             else if (classOutlineScene.getNewVariableAccessModifierBox().isFocused()) {
                 classOutlineScene.getNewVariableAccessModifierBox().fireEvent(event);
@@ -586,6 +580,20 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
                 TextField initialValueField = getField(variableInitialValue);
                 classOutlineScene.getVariableInitialValueTextFields().add(initialValueField);
                 rowBox.getChildren().add(initialValueField);
+            }
+
+            // Otherwise add a button to add an initial value.
+            else {
+                Button addInitialValueButton = new Button("Set Initial Value");
+
+                // When the button is pressed it is replaced with a text field.
+                addInitialValueButton.setOnAction(e -> {
+                    TextField newInitialValueTextField = new TextField("<Initial Value>");
+                    newInitialValueTextField.selectAll();
+                    rowBox.getChildren().set(rowBox.getChildren().size() - 1, newInitialValueTextField);
+                    classOutlineScene.getVariableInitialValueTextFields().add(newInitialValueTextField);
+                });
+                rowBox.getChildren().add(addInitialValueButton);
             }
 
             areaRowBox.getChildren().add(rowBox);
