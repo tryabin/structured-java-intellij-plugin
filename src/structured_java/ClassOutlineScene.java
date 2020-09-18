@@ -121,11 +121,21 @@ public class ClassOutlineScene extends Scene {
 
     public String getNewVariableSourceText() {
         String sourceText = "";
-        sourceText += newVariableAccessModifierBox.getValue() + " ";
+
+        // Access Modifier
+        if (!newVariableAccessModifierBox.getValue().equals("None")) {
+            sourceText += newVariableAccessModifierBox.getValue() + " ";
+        }
+
+        // Static / Non-Static Modifier
         if (newVariableStaticModifierBox.getValue().equals("static")) {
             sourceText += newVariableStaticModifierBox.getValue() + " ";
         }
+
+        // Type
         sourceText += newVariableTypeField.getText() + " ";
+
+        // Name
         sourceText += newVariableNameField.getText();
 
         // Add the initial value if it is non-empty.

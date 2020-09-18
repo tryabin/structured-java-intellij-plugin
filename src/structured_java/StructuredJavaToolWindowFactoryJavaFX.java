@@ -196,9 +196,6 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
             if(classOutlineScene.focusOwnerProperty().get() instanceof Button) {
                 ((Button)classOutlineScene.focusOwnerProperty().get()).fire();
             }
-            else if (classOutlineScene.getNewVariableAccessModifierBox().isFocused()) {
-                classOutlineScene.getNewVariableAccessModifierBox().fireEvent(event);
-            }
             else {
                 switch (keyboardFocusInfo.getFocusLevel()) {
                     case AREA: {
