@@ -237,7 +237,8 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
                 if (keyboardFocusInfo.getFocusLevel() == KeyboardFocusInfo.FocusLevel.COLUMN) {
                     moveFocusRightOneColumn();
 
-                    // Skip focusing on labels.
+                    // Need to set the focus here so we can skip focusing on labels.
+                    setKeyboardFocus();
                     if (classOutlineScene.focusOwnerProperty().get() instanceof Label) {
                         moveFocusRightOneColumn();
                     }
@@ -253,7 +254,8 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
                 if (keyboardFocusInfo.getFocusLevel() == KeyboardFocusInfo.FocusLevel.COLUMN) {
                     moveFocusLeftOneColumn();
 
-                    // Skip focusing on labels.
+                    // Need to set the focus here so we can skip focusing on labels.
+                    setKeyboardFocus();
                     if (classOutlineScene.focusOwnerProperty().get() instanceof Label) {
                         moveFocusLeftOneColumn();
                     }
@@ -402,7 +404,6 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
 
 
     private void handleMethodEditingScene(KeyEvent event) {
-
         // Back button.
         if (methodEditingScene.getBackButton().isFocused() && event.getCode() == ENTER) {
             methodEditingScene.getBackButton().fire();
@@ -441,8 +442,6 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
                 break;
             }
         }
-
-        setKeyboardFocus();
     }
 
 
@@ -517,22 +516,21 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
         VBox focusedArea = classOutlineScene.getAreas().get(keyboardFocusInfo.getFocusedAreaIndex());
         VBox focusedRowArea = (VBox) focusedArea.getChildren().get(1);
 
+        // Move the focus one column to the right if we aren't already on the last column.
         if (keyboardFocusInfo.getFocusedColumn() < ((HBox) focusedRowArea.getChildren().get(keyboardFocusInfo.getFocusedRow())).getChildren().size() - 1 &&
             keyboardFocusInfo.getFocusLevel() == KeyboardFocusInfo.FocusLevel.COLUMN) {
             keyboardFocusInfo.incrementColumn();
         }
-
-        setKeyboardFocus();
     }
 
 
     private void moveFocusLeftOneColumn() {
+
+        // Move the focus one column to the left if we aren't already on the first column.
         if (keyboardFocusInfo.getFocusedColumn() > 0 &&
             keyboardFocusInfo.getFocusLevel() == KeyboardFocusInfo.FocusLevel.COLUMN) {
             keyboardFocusInfo.decrementColumn();
         }
-
-        setKeyboardFocus();
     }
 
 
