@@ -42,9 +42,9 @@ public class Utilities {
     }
 
 
-    protected static void waitForNumberOfMethodsInClassToChange(int originalNumberOfMethods, StructuredJavaToolWindowFactoryJavaFX ui) {
+    protected static void waitForNumberOfMethodsInClassToChange(int originalNumberOfMethods, Project project) {
         int pollTimeMs = 50;
-        while (ApplicationManager.getApplication().runReadAction((Computable<PsiMethod[]>) getCurrentClass(ui.getProject())::getMethods).length == originalNumberOfMethods) {
+        while (ApplicationManager.getApplication().runReadAction((Computable<PsiMethod[]>) () -> getCurrentMethods(project)).length == originalNumberOfMethods) {
             try {
                 Thread.sleep(pollTimeMs);
             } catch (InterruptedException e) {
@@ -59,5 +59,19 @@ public class Utilities {
         Matcher matcher = p.matcher(text);
         matcher.find();
         return matcher.start();
+    }
+
+
+    protected static PsiMethod[] getCurrentMethods(Project project) {
+        PsiClass currentClass = getCurrentClass(project);
+        PsiMethod[] psiMethods = ApplicationManager.getApplication().runReadAction((Computable<PsiMethod[]>) currentClass::getMethods);
+        return psiMethods;
+    }
+
+
+    protected static PsiField[] getCurrentVariables(Project project) {
+        PsiClass currentClass = getCurrentClass(project);
+        PsiField[] psiFields = ApplicationManager.getApplication().runReadAction((Computable<PsiField[]>) currentClass::getFields);
+        return psiFields;
     }
 }

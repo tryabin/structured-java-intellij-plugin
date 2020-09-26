@@ -2,9 +2,6 @@ package structured_java;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.command.WriteCommandAction;
-import com.intellij.openapi.editor.Document;
-import com.intellij.openapi.editor.Editor;
-import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Computable;
@@ -18,7 +15,10 @@ import javafx.embed.swing.JFXPanel;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -41,7 +41,6 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
 
     private Project project;
     private PsiClass currentClass;
-    private PsiMethod selectedMethod;
     private KeyboardFocusInfo keyboardFocusInfo;
     private List<PsiField> variables = new ArrayList<>();
     private List<PsiMethod> methods = new ArrayList<>();
@@ -58,15 +57,12 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
         return project;
     }
 
-    public KeyboardFocusInfo getKeyboardFocusInfo () { return keyboardFocusInfo; };
+    public KeyboardFocusInfo getKeyboardFocusInfo () { return keyboardFocusInfo; }
 
     public ClassOutlineScene getClassOutlineScene() {
         return classOutlineScene;
     }
 
-    public String getNewMethodText() {
-        return classOutlineScene.getNewMethodTextField().getText();
-    }
 
     @Override
     public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
@@ -80,6 +76,7 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
             keyboardFocusInfo = new KeyboardFocusInfo();
 
             // Build the scene.
+            buildEmptyMethodEditingScene();
             rebuildClassOutlineScene();
         }));
 
@@ -148,16 +145,13 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
         }
 
         // Add a key handler to the scene.
-        classOutlineScene.addEventFilter(KeyEvent.KEY_PRESSED, this);
+        classOutlineScene.addEventHandler(KeyEvent.KEY_PRESSED, this);
     }
 
     @Override
     public void handle(KeyEvent event) {
         if (fxPanel.getScene() instanceof  ClassOutlineScene) {
             handleClassOutLineScene(event);
-        }
-        else if (fxPanel.getScene() instanceof MethodEditingScene) {
-            handleMethodEditingScene(event);
         }
     }
 
@@ -206,7 +200,7 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
                     case ROW: {
                         switch (currentArea) {
                             case METHOD:
-                                selectedMethod = methods.get(keyboardFocusInfo.getFocusedRow());
+                                PsiMethod selectedMethod = methods.get(keyboardFocusInfo.getFocusedRow());
                                 buildMethodEditingScene(selectedMethod);
                                 setSceneToMethodEditing();
                                 break;
@@ -323,7 +317,7 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
                         WriteCommandAction.writeCommandAction(project).run(methodToDelete::delete);
 
                         // Wait until the number of methods in the class changes.
-                        Utilities.waitForNumberOfMethodsInClassToChange(methods.size(), this);
+                        Utilities.waitForNumberOfMethodsInClassToChange(methods.size(), project);
 
                         // Rebuild the UI.
                         rebuildClassOutlineScene();
@@ -403,12 +397,7 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
     }
 
 
-    private void handleMethodEditingScene(KeyEvent event) {
-        // Back button.
-        if (methodEditingScene.getBackButton().isFocused() && event.getCode() == ENTER) {
-            methodEditingScene.getBackButton().fire();
-        }
-    }
+
 
 
     private void moveFocusDownForAreaOrRow() {
@@ -502,7 +491,7 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
                 focusedArea.requestFocus();
                 break;
             case ROW:
-                focusedRowArea.requestFocus();
+                focusedRowArea.getChildren().get(keyboardFocusInfo.getFocusedRow()).requestFocus();
                 break;
             case COLUMN:
                 HBox row = (HBox) focusedRowArea.getChildren().get(keyboardFocusInfo.getFocusedRow());
@@ -553,18 +542,19 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
 
             // Type
             String variableType = ApplicationManager.getApplication().runReadAction((Computable<String>) () -> variable.getType().getPresentableText());
-            TextField variableTypeField = new TextField(variableType);
+            TextField variableTypeField = getField(variableType);
             rowBox.getChildren().add(variableTypeField);
 
             // Name
-            String variableName = ApplicationManager.getApplication().runReadAction((Computable<String>) () -> variable.getName());
-            TextField nameField = new TextField(variableName);
+            String variableName = ApplicationManager.getApplication().runReadAction((Computable<String>) variable::getName);
+            TextField nameField = getField(variableName);
             classOutlineScene.getVariableNameTextFields().add(nameField);
             rowBox.getChildren().add(nameField);
 
             // If the variable has an initial value, add an equals sign label and
             // a text field for the initial value.
-            if (variable.hasInitializer()) {
+            boolean variableHasInitializer =  ApplicationManager.getApplication().runReadAction((Computable<Boolean>) variable::hasInitializer);
+            if (variableHasInitializer) {
                 String variableInitialValue = ApplicationManager.getApplication().runReadAction((Computable<String>) () -> variable.getInitializer().getText());
 
                 // '=' label.
@@ -580,15 +570,16 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
             // Otherwise add a button to add an initial value.
             else {
                 Button addInitialValueButton = new Button("Set Initial Value");
+                rowBox.getChildren().add(addInitialValueButton);
 
                 // When the button is pressed it is replaced with a text field.
                 addInitialValueButton.setOnAction(e -> {
-                    TextField newInitialValueTextField = new TextField("<Initial Value>");
+                    TextField newInitialValueTextField = getField("<Initial Value>");
                     newInitialValueTextField.selectAll();
                     rowBox.getChildren().set(rowBox.getChildren().size() - 1, newInitialValueTextField);
                     classOutlineScene.getVariableInitialValueTextFields().add(newInitialValueTextField);
                 });
-                rowBox.getChildren().add(addInitialValueButton);
+
             }
 
             areaRowBox.getChildren().add(rowBox);
@@ -596,6 +587,7 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
 
         // The row for adding a new variable.
         HBox newVariableRow = new HBox();
+        newVariableRow.setSpacing(5);
 
         // The access modifier dropdown.
         ComboBox<String> accessModifierBox = new ComboBox<>(FXCollections.observableArrayList("private", "protected", "public", "None"));
@@ -610,12 +602,12 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
         classOutlineScene.setNewVariableStaticModifierBox(staticModifierBox);
 
         // Type text field.
-        TextField typeField = new TextField("<Type>");
+        TextField typeField = getField("<Type>");
         newVariableRow.getChildren().add(typeField);
         classOutlineScene.setNewVariableTypeField(typeField);
 
         // Name field.
-        TextField nameField = new TextField("<Name>");
+        TextField nameField = getField("<Name>");
         newVariableRow.getChildren().add(nameField);
         classOutlineScene.setNewVariableNameField(nameField);
 
@@ -624,7 +616,7 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
         newVariableRow.getChildren().add(equalsSign);
 
         // Initial value field.
-        TextField initialValueField = new TextField("<Initial Value>");
+        TextField initialValueField = getField("<Initial Value>");
         newVariableRow.getChildren().add(initialValueField);
         classOutlineScene.setNewVariableInitialValueField(initialValueField);
 
@@ -678,23 +670,19 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
         VBox areaRowBox = new VBox();
 
         // Create a row for each method.
-        for (int i = 0; i < methods.size(); i++) {
-            PsiMethod method = methods.get(i);
+        for (PsiMethod method : methods) {
             HBox rowBox = buildMethodRow(method);
 
-            // Add the row component to the area component.
             areaRowBox.getChildren().add(rowBox);
         }
 
-        // Create a row for creating a new method.
-        TextField newMethodField = new TextField();
+        // Create a row for the button to add a new method.
         Button addMethodButton = new Button("Add Method");
-        addMethodButton.setOnAction(new AddMethodHandler(this));
-        HBox newMethodRowBox = new HBox();
-        newMethodRowBox.getChildren().add(newMethodField);
-        newMethodRowBox.getChildren().add(addMethodButton);
-        areaRowBox.getChildren().add(newMethodRowBox);
-        classOutlineScene.setNewMethodTextField(newMethodField);
+        addMethodButton.setOnAction(event -> {
+            buildEmptyMethodEditingScene();
+            setSceneToMethodEditing();
+        });
+        areaRowBox.getChildren().add(addMethodButton);
         classOutlineScene.setAddMethodButton(addMethodButton);
 
         // Build the root component of the area.
@@ -786,54 +774,19 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
     private void buildMethodEditingScene(PsiMethod method) {
         // Build the scene components.
         VBox root = new VBox();
-
-        // Back button
-        Button backButton = new Button("Back");
-        backButton.setOnAction(event -> rebuildClassOutlineScene());
-        root.getChildren().add(backButton);
-
-        // Method header
-        HBox methodHeader = buildMethodRow(method);
-        root.getChildren().add(methodHeader);
-
-        // Create the method editing text field
-        TextArea methodTextArea = new TextArea();
-
-        // Set the text in the method editing area to be the body of the selected method.
-        WriteCommandAction.runWriteCommandAction(project, () -> {
-            String methodText = method.getBody().getText();
-            methodTextArea.setText(methodText);
-            root.getChildren().add(methodTextArea);
-        });
-
-        // Add a text listener to the method editing text area so the source code is updated
-        // as soon as the text in the method editing area changes.
-        methodTextArea.textProperty().addListener((observable, oldValue, newValue) ->
-        {
-            WriteCommandAction.runWriteCommandAction(project, () -> {
-                Editor editor = FileEditorManager.getInstance(project).getSelectedTextEditor();
-                Document document = editor.getDocument();
-
-                // Need to find the offset of the left bracket because the UI method text is just the body.
-                int leftBracketOffset = Utilities.findOffsetOfSubstring(document.getText(selectedMethod.getTextRange()), "\\{");
-
-                // Replace the method text in the source file.
-                String uiText = methodEditingScene.getMethodTextArea().getText();
-                document.replaceString(selectedMethod.getTextRange().getStartOffset() + leftBracketOffset, selectedMethod.getTextRange().getEndOffset(), uiText);
-            });
-        });
+        methodEditingScene = new MethodEditingScene(root, method, this);
+    }
 
 
-        // Build the new scene object.
-        methodEditingScene = new MethodEditingScene(root);
-        methodEditingScene.setBackButton(backButton);
-        methodEditingScene.setMethodTextArea(methodTextArea);
-        methodEditingScene.addEventFilter(KeyEvent.KEY_PRESSED, this);
+    private void buildEmptyMethodEditingScene() {
+        VBox root = new VBox();
+        methodEditingScene = new MethodEditingScene(root, this);
     }
 
 
     public void setSceneToClassOutline() {
         fxPanel.setScene(classOutlineScene);
+        methodEditingScene.removeEventHandler(KeyEvent.KEY_PRESSED, methodEditingScene);
         setKeyboardFocus();
         highlightFocusedComponent();
     }
@@ -841,6 +794,7 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
 
     public void setSceneToMethodEditing() {
         fxPanel.setScene(methodEditingScene);
+        classOutlineScene.removeEventHandler(KeyEvent.KEY_PRESSED, this);
         methodEditingScene.getBackButton().requestFocus();
     }
 }
