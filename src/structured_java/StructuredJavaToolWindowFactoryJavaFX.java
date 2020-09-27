@@ -76,7 +76,7 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
             keyboardFocusInfo = new KeyboardFocusInfo();
 
             // Build the scene.
-            buildEmptyMethodEditingScene();
+            methodEditingScene = new MethodEditingScene(new VBox(), this);
             rebuildClassOutlineScene();
         }));
 
@@ -201,7 +201,7 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
                         switch (currentArea) {
                             case METHOD:
                                 PsiMethod selectedMethod = methods.get(keyboardFocusInfo.getFocusedRow());
-                                buildMethodEditingScene(selectedMethod);
+                                methodEditingScene = new MethodEditingScene(new VBox(), selectedMethod, this);
                                 setSceneToMethodEditing();
                                 break;
                             default:
@@ -395,9 +395,6 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
         buildClassOutlineScene();
         setSceneToClassOutline();
     }
-
-
-
 
 
     private void moveFocusDownForAreaOrRow() {
@@ -679,7 +676,7 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
         // Create a row for the button to add a new method.
         Button addMethodButton = new Button("Add Method");
         addMethodButton.setOnAction(event -> {
-            buildEmptyMethodEditingScene();
+            methodEditingScene = new MethodEditingScene(new VBox(), this);
             setSceneToMethodEditing();
         });
         areaRowBox.getChildren().add(addMethodButton);
@@ -768,19 +765,6 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory,
         area.getChildren().add(areaRowBox);
 
         return area;
-    }
-
-
-    private void buildMethodEditingScene(PsiMethod method) {
-        // Build the scene components.
-        VBox root = new VBox();
-        methodEditingScene = new MethodEditingScene(root, method, this);
-    }
-
-
-    private void buildEmptyMethodEditingScene() {
-        VBox root = new VBox();
-        methodEditingScene = new MethodEditingScene(root, this);
     }
 
 

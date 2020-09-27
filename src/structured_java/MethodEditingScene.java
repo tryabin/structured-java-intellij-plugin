@@ -1,10 +1,13 @@
 package structured_java;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Computable;
+import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiField;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiModifier;
@@ -23,7 +26,6 @@ import javafx.scene.layout.VBox;
 import java.util.ArrayList;
 import java.util.List;
 
-import static javafx.scene.input.KeyCode.DELETE;
 import static javafx.scene.input.KeyCode.ENTER;
 import static structured_java.UserInterfaceUtilities.getField;
 
@@ -134,6 +136,9 @@ public class MethodEditingScene extends Scene implements EventHandler<KeyEvent> 
         super(root);
         this.project = ui.getProject();
 
+        // Make the UI handle key events.
+        addEventHandler(KeyEvent.KEY_PRESSED, this);
+
         // Create an empty method editing scene.
         MethodData emptyMethodData = new MethodData();
         buildMethodEditingScene(root, emptyMethodData, ui);
@@ -144,41 +149,37 @@ public class MethodEditingScene extends Scene implements EventHandler<KeyEvent> 
         root.getChildren().add(saveMethodButton);
     }
 
+
     public MethodEditingScene(VBox root, PsiMethod selectedMethod, StructuredJavaToolWindowFactoryJavaFX ui) {
         super (root);
         this.method = selectedMethod;
         this.project = ui.getProject();
 
+        // Make the UI handle key events.
+        addEventHandler(KeyEvent.KEY_PRESSED, this);
+
         // Get the method data.
         MethodData methodData = new MethodData(method);
         buildMethodEditingScene(root, methodData, ui);
-
-        // Add a text listener to the method editing text area so the source code is updated
-        // as soon as the text in the method editing area changes.
-        methodTextArea.textProperty().addListener((observable, oldValue, newValue) ->
-        {
-            WriteCommandAction.runWriteCommandAction(ui.getProject(), () -> {
-                Editor editor = FileEditorManager.getInstance(ui.getProject()).getSelectedTextEditor();
-                Document document = editor.getDocument();
-
-                // Need to find the offset of the left bracket because the UI method text is just the body.
-                int leftBracketOffset = Utilities.findOffsetOfSubstring(document.getText(method.getTextRange()), "\\{");
-
-                // Replace the method text in the source file.
-                String uiText = methodTextArea.getText();
-                document.replaceString(method.getTextRange().getStartOffset() + leftBracketOffset, method.getTextRange().getEndOffset(), uiText);
-            });
-        });
     }
 
+
     private void buildMethodEditingScene(VBox root, MethodData methodData, StructuredJavaToolWindowFactoryJavaFX ui) {
-        // Make the UI handle key events.
-        addEventHandler(KeyEvent.KEY_PRESSED, this);
 
         // Back button
         backButton = new Button("Back");
         backButton.setOnAction(event -> ui.rebuildClassOutlineScene());
         root.getChildren().add(backButton);
+
+        // Build the source parts.
+        buildSourcePartsOfMethodEditingScene(root, methodData, ui.getProject());
+    }
+
+    private void buildSourcePartsOfMethodEditingScene(VBox root, MethodData methodData, Project project) {
+
+        // Clear existing data.
+        modifierBoxes.clear();
+        parameterFields.clear();
 
         // The row containing method data.
         methodRow = new HBox();
@@ -234,7 +235,28 @@ public class MethodEditingScene extends Scene implements EventHandler<KeyEvent> 
         // Method source text
         methodTextArea = new TextArea(methodData.getSourceText());
         root.getChildren().add(methodTextArea);
+
+        // Add a text listener to the method editing text area so the source code is updated
+        // as soon as the text in the method editing area changes.
+        methodTextArea.textProperty().addListener((observable, oldValue, newValue) ->
+        {
+            WriteCommandAction.runWriteCommandAction(project, () -> {
+                Editor editor = FileEditorManager.getInstance(project).getSelectedTextEditor();
+                Document document = editor.getDocument();
+
+                // Replace tabs in the method text area with 4 spaces.
+                methodTextArea.setText(methodTextArea.getText().replace("\t", "    "));
+
+                // Need to find the offset of the left bracket because the UI method text is just the body.
+                int leftBracketOffset = Utilities.findOffsetOfSubstring(document.getText(method.getTextRange()), "\\{");
+
+                // Replace the method text in the source file.
+                String uiText = methodTextArea.getText();
+                document.replaceString(method.getTextRange().getStartOffset() + leftBracketOffset, method.getTextRange().getEndOffset(), uiText);
+            });
+        });
     }
+
 
     @Override
     public void handle(KeyEvent event) {
@@ -250,46 +272,59 @@ public class MethodEditingScene extends Scene implements EventHandler<KeyEvent> 
             // Pressing ENTER anywhere in the method editing scene except a button or a
             // text area edits the method source code.
             else if (focusOwner != methodTextArea) {
-                PsiMethod[] currentMethods = Utilities.getCurrentMethods(project);
-                PsiField[] currentVariables = Utilities.getCurrentVariables(project);
-                int originalNumberOfMethods = currentMethods.length;
-
-                // Find the offset to insert the method in.
-                int offsetToInsertNewMethod = 0;
-                if (currentMethods.length > 0 && currentMethods[0] != method) {
-                    for (PsiMethod currentMethod : currentMethods) {
-                        if (currentMethod == method) {
-                            break;
-                        }
-                        offsetToInsertNewMethod = currentMethod.getTextRange().getEndOffset();
-                    }
-                }
-                else if (currentVariables.length > 0) {
-                    PsiField lastVariable = currentVariables[currentVariables.length - 1];
-                    offsetToInsertNewMethod = lastVariable.getTextRange().getEndOffset();
-                }
-                else {
-                    offsetToInsertNewMethod = Utilities.getCurrentClass(project).getLBrace().getTextOffset() + 1;
-                }
-
-                // Delete the current method and then insert the new method in its place.
-                WriteCommandAction.writeCommandAction(project).run(() -> method.delete());
-                Utilities.waitForNumberOfMethodsInClassToChange(originalNumberOfMethods, project);
-                AddMethodHandler.insertNewMethodText(this, offsetToInsertNewMethod);
-            }
-        }
-
-        // DELETE deletes a parameter field if it is focused.
-        if (event.getCode() == DELETE) {
-            if (focusOwner instanceof TextField &&
-                parameterFields.contains(focusOwner)) {
-
-                parameterFields.remove(focusOwner);
-                methodRow.getChildren().remove(focusOwner);
-                addParameterButton.requestFocus();
+                editMethodSource();
             }
         }
     }
 
 
+    private void editMethodSource() {
+        PsiClass currentClass = Utilities.getCurrentClass(project);
+        PsiMethod[] currentMethods = Utilities.getCurrentMethods(project);
+        PsiField[] currentVariables = Utilities.getCurrentVariables(project);
+        int originalNumberOfMethods = currentMethods.length;
+
+        // Find the offset to insert the method in.
+        int offsetToInsertNewMethod = 0;
+        if (currentMethods.length > 0 && currentMethods[0] != method) {
+            for (PsiMethod currentMethod : currentMethods) {
+                if (currentMethod == method) {
+                    break;
+                }
+                offsetToInsertNewMethod = currentMethod.getTextRange().getEndOffset();
+            }
+        }
+        else if (currentVariables.length > 0) {
+            PsiField lastVariable = currentVariables[currentVariables.length - 1];
+            offsetToInsertNewMethod = lastVariable.getTextRange().getEndOffset();
+        }
+        else {
+            offsetToInsertNewMethod = currentClass.getLBrace().getTextOffset() + 1;
+        }
+
+        // Delete the current method and then insert the new method in its place.
+        WriteCommandAction.writeCommandAction(project).run(() -> method.delete());
+        Utilities.waitForNumberOfMethodsInClassToChange(originalNumberOfMethods, project);
+        AddMethodHandler.insertNewMethodText(this, offsetToInsertNewMethod);
+
+        // Rebuild the method editing scene.
+        PsiMethod[] newPsiMethods = ApplicationManager.getApplication().runReadAction((Computable<PsiMethod[]>) currentClass::getMethods);
+        for (PsiMethod newMethod : newPsiMethods) {
+            if (nameField.getText().equals(newMethod.getName())){
+                MethodData newMethodData = new MethodData(newMethod);
+                method = newMethod;
+
+                // Rebuild the UI components.
+                VBox root = new VBox();
+                setRoot(root);
+
+                // Add the back button.
+                root.getChildren().add(backButton);
+
+                // Add the other components.
+                buildSourcePartsOfMethodEditingScene(root, newMethodData, project);
+                break;
+            }
+        }
+    }
 }

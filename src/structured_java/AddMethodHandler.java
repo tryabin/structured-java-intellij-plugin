@@ -14,6 +14,7 @@ import javafx.event.EventHandler;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -106,26 +107,31 @@ public class AddMethodHandler implements EventHandler<ActionEvent> {
             methodTextToInsert += methodEditingScene.getNameField().getText();
 
             // Parameters
-            List<TextField> parameterFields = methodEditingScene.getParameterFields();
-            if (!parameterFields.isEmpty()) {
+            {
                 methodTextToInsert += "(";
-                for (int i = 0; i < parameterFields.size(); i++) {
-                    TextField parameterField = parameterFields.get(i);
-                    methodTextToInsert += parameterField.getText();
-                    if (i != parameterFields.size() - 1) {
-                        methodTextToInsert += ", ";
-                    }
-                    else {
-                        methodTextToInsert += ")";
+                List<TextField> parameterFields = methodEditingScene.getParameterFields();
+
+                // Get all non-empty parameters.
+                List<String> nonEmptyParameters = new ArrayList<>();
+                for (TextField parameterField : parameterFields) {
+                    if (parameterField.getText().length() > 0) {
+                        nonEmptyParameters.add(parameterField.getText());
                     }
                 }
+
+                // Add the parameters to the source text.
+                for (int i = 0; i < nonEmptyParameters.size(); i++) {
+                    String parameter = nonEmptyParameters.get(i);
+                    methodTextToInsert += parameter;
+                    if (i != nonEmptyParameters.size() - 1) {
+                        methodTextToInsert += ", ";
+                    }
+                }
+                methodTextToInsert += ")";
             }
 
             // Method body
             methodTextToInsert += methodEditingScene.getMethodTextArea().getText();
-
-            // Replace tabs with 4 spaces.
-            methodTextToInsert = methodTextToInsert.replace("\t", "    ");
 
             // Add the new method to the class.
             Editor editor =  FileEditorManager.getInstance(project).getSelectedTextEditor();
@@ -134,14 +140,5 @@ public class AddMethodHandler implements EventHandler<ActionEvent> {
 
         // Wait until the number of methods in the class changes.
         Utilities.waitForNumberOfMethodsInClassToChange(psiMethods.length, project);
-
-        // Set the method in the method editing scene to the new method.
-        psiMethods = ApplicationManager.getApplication().runReadAction((Computable<PsiMethod[]>) currentClass::getMethods);
-        for (PsiMethod method : psiMethods) {
-            if (method.getName().equals(methodEditingScene.getMethod().getName())){
-                methodEditingScene.setMethod(method);
-                break;
-            }
-        }
     }
 }
