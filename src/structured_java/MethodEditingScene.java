@@ -26,6 +26,7 @@ import javafx.scene.layout.VBox;
 import java.util.ArrayList;
 import java.util.List;
 
+import static javafx.scene.input.KeyCode.DELETE;
 import static javafx.scene.input.KeyCode.ENTER;
 import static structured_java.UserInterfaceUtilities.getField;
 
@@ -216,6 +217,23 @@ public class MethodEditingScene extends Scene implements EventHandler<KeyEvent> 
             TextField parameterField = getField(parameter);
             parameterFields.add(parameterField);
             methodRow.getChildren().add(parameterField);
+
+            parameterField.setOnKeyPressed(event -> {
+                // If the DELETE key is pressed on a parameter field then delete the field
+                // and set the focus on the next element.
+                if (event.getCode() == DELETE) {
+                    for (int i = 0; i < methodRow.getChildren().size(); i++) {
+                        Node child = methodRow.getChildren().get(i);
+                        if (child == parameterField) {
+                            methodRow.getChildren().remove(parameterField);
+                            parameterFields.remove(parameterField);
+                            editMethodSource();
+                            methodRow.getChildren().get(i).requestFocus();
+                            break;
+                        }
+                    }
+                }
+            });
         }
 
         // Add parameter button

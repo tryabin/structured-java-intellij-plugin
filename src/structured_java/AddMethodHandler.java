@@ -14,7 +14,6 @@ import javafx.event.EventHandler;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -111,19 +110,11 @@ public class AddMethodHandler implements EventHandler<ActionEvent> {
                 methodTextToInsert += "(";
                 List<TextField> parameterFields = methodEditingScene.getParameterFields();
 
-                // Get all non-empty parameters.
-                List<String> nonEmptyParameters = new ArrayList<>();
-                for (TextField parameterField : parameterFields) {
-                    if (parameterField.getText().length() > 0) {
-                        nonEmptyParameters.add(parameterField.getText());
-                    }
-                }
-
                 // Add the parameters to the source text.
-                for (int i = 0; i < nonEmptyParameters.size(); i++) {
-                    String parameter = nonEmptyParameters.get(i);
+                for (int i = 0; i < parameterFields.size(); i++) {
+                    String parameter = parameterFields.get(i).getText();
                     methodTextToInsert += parameter;
-                    if (i != nonEmptyParameters.size() - 1) {
+                    if (i != parameterFields.size() - 1) {
                         methodTextToInsert += ", ";
                     }
                 }
