@@ -192,6 +192,23 @@ public class MethodEditingScene extends Scene implements EventHandler<KeyEvent> 
             modifierBox.getSelectionModel().select(modifier);
             methodRow.getChildren().add(modifierBox);
             modifierBoxes.add(modifierBox);
+
+            // If the DELETE key is pressed on a modifier box then delete the box
+            // and set the focus on the next element.
+            modifierBox.setOnKeyPressed(event -> {
+                if (event.getCode() == DELETE) {
+                    for (int i = 0; i < methodRow.getChildren().size(); i++) {
+                        Node child = methodRow.getChildren().get(i);
+                        if (child == modifierBox) {
+                            methodRow.getChildren().remove(modifierBox);
+                            modifierBoxes.remove(modifierBox);
+                            editMethodSource();
+                            methodRow.getChildren().get(i).requestFocus();
+                            break;
+                        }
+                    }
+                }
+            });
         }
 
         // Add modifier button
@@ -218,9 +235,9 @@ public class MethodEditingScene extends Scene implements EventHandler<KeyEvent> 
             parameterFields.add(parameterField);
             methodRow.getChildren().add(parameterField);
 
+            // If the DELETE key is pressed on a parameter field then delete the field
+            // and set the focus on the next element.
             parameterField.setOnKeyPressed(event -> {
-                // If the DELETE key is pressed on a parameter field then delete the field
-                // and set the focus on the next element.
                 if (event.getCode() == DELETE) {
                     for (int i = 0; i < methodRow.getChildren().size(); i++) {
                         Node child = methodRow.getChildren().get(i);
@@ -328,7 +345,8 @@ public class MethodEditingScene extends Scene implements EventHandler<KeyEvent> 
         // Rebuild the method editing scene.
         PsiMethod[] newPsiMethods = ApplicationManager.getApplication().runReadAction((Computable<PsiMethod[]>) currentClass::getMethods);
         for (PsiMethod newMethod : newPsiMethods) {
-            if (nameField.getText().equals(newMethod.getName())){
+            String newMethodName = ApplicationManager.getApplication().runReadAction((Computable<String>) newMethod::getName);
+            if (nameField.getText().equals(newMethodName)){
                 MethodData newMethodData = new MethodData(newMethod);
                 method = newMethod;
 
