@@ -13,6 +13,7 @@ import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.VBox;
 
 import java.util.Arrays;
 import java.util.List;
@@ -22,12 +23,10 @@ import static structured_java.Utilities.getCurrentClass;
 
 public class AddMethodHandler implements EventHandler<ActionEvent> {
 
-    private MethodEditingScene methodEditingScene;
     private StructuredJavaToolWindowFactoryJavaFX ui;
 
 
-    public AddMethodHandler(MethodEditingScene methodEditingScene, StructuredJavaToolWindowFactoryJavaFX ui) {
-        this.methodEditingScene = methodEditingScene;
+    public AddMethodHandler(StructuredJavaToolWindowFactoryJavaFX ui) {
         this.ui = ui;
     }
 
@@ -35,16 +34,16 @@ public class AddMethodHandler implements EventHandler<ActionEvent> {
     @Override
     public void handle(ActionEvent event) {
         // Insert the text of the new method into the source code using the information in the method editing scene.
-        int offsetToInsertMethod = getOffsetToAddNewMethod(methodEditingScene.getProject());
-        insertNewMethodText(methodEditingScene, offsetToInsertMethod);
+        int offsetToInsertMethod = getOffsetToAddNewMethod(ui.getProject());
+        insertNewMethodText(ui.getMethodEditingScene(), offsetToInsertMethod);
 
         // Focus on the row of the new method.
-        KeyboardFocusInfo focusInfo = ui.getKeyboardFocusInfo();
+        KeyboardFocusInfo focusInfo = ui.getClassOutlineScene().getKeyboardFocusInfo();
         focusInfo.setFocusLevel(KeyboardFocusInfo.FocusLevel.ROW);
 
         // Rebuild the UI.
-        ui.buildClassOutlineScene();
-        ui.setSceneToClassOutline();
+        ui.getClassOutlineScene().buildClassOutlineScene();
+        ui.setSceneToClassOutlineScene();
     }
 
 
@@ -81,6 +80,7 @@ public class AddMethodHandler implements EventHandler<ActionEvent> {
 
         return offsetToInsertMethod.get();
     }
+
 
     public static void insertNewMethodText(MethodEditingScene methodEditingScene, int offsetToInsertMethod) {
         // Get the class methods.
@@ -130,6 +130,6 @@ public class AddMethodHandler implements EventHandler<ActionEvent> {
         });
 
         // Wait until the number of methods in the class changes.
-        Utilities.waitForNumberOfMethodsInClassToChange(psiMethods.length, project);
+        Utilities.waitForNumberOfMethodsInClassToChange(psiMethods.length, currentClass);
     }
 }

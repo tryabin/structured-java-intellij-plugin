@@ -146,7 +146,7 @@ public class MethodEditingScene extends Scene implements EventHandler<KeyEvent> 
 
         // Save method button
         saveMethodButton = new Button("Save Method");
-        saveMethodButton.setOnAction(new AddMethodHandler(this, ui));
+        saveMethodButton.setOnAction(new AddMethodHandler(ui));
         root.getChildren().add(saveMethodButton);
     }
 
@@ -166,10 +166,9 @@ public class MethodEditingScene extends Scene implements EventHandler<KeyEvent> 
 
 
     private void buildMethodEditingScene(VBox root, MethodData methodData, StructuredJavaToolWindowFactoryJavaFX ui) {
-
         // Back button
         backButton = new Button("Back");
-        backButton.setOnAction(event -> ui.rebuildClassOutlineScene());
+        backButton.setOnAction(event -> ui.setSceneToClassOutlineScene());
         root.getChildren().add(backButton);
 
         // Build the source parts.
@@ -235,6 +234,7 @@ public class MethodEditingScene extends Scene implements EventHandler<KeyEvent> 
             parameterFields.add(parameterField);
             methodRow.getChildren().add(parameterField);
 
+            // If the DELETE key is pressed on a parameter field then delete the field
             // If the DELETE key is pressed on a parameter field then delete the field
             // and set the focus on the next element.
             parameterField.setOnKeyPressed(event -> {
@@ -315,8 +315,8 @@ public class MethodEditingScene extends Scene implements EventHandler<KeyEvent> 
 
     private void editMethodSource() {
         PsiClass currentClass = Utilities.getCurrentClass(project);
-        PsiMethod[] currentMethods = Utilities.getCurrentMethods(project);
-        PsiField[] currentVariables = Utilities.getCurrentVariables(project);
+        PsiMethod[] currentMethods = Utilities.getCurrentMethods(currentClass);
+        PsiField[] currentVariables = Utilities.getCurrentVariables(currentClass);
         int originalNumberOfMethods = currentMethods.length;
 
         // Find the offset to insert the method in.
@@ -339,7 +339,7 @@ public class MethodEditingScene extends Scene implements EventHandler<KeyEvent> 
 
         // Delete the current method and then insert the new method in its place.
         WriteCommandAction.writeCommandAction(project).run(() -> method.delete());
-        Utilities.waitForNumberOfMethodsInClassToChange(originalNumberOfMethods, project);
+        Utilities.waitForNumberOfMethodsInClassToChange(originalNumberOfMethods, currentClass);
         AddMethodHandler.insertNewMethodText(this, offsetToInsertNewMethod);
 
         // Rebuild the method editing scene.

@@ -12,16 +12,16 @@ import java.util.regex.Pattern;
 
 public class Utilities {
 
-    protected static PsiClass getCurrentClass(Project p) {
+    protected static PsiClass getCurrentClass(Project project) {
         // Get the currently selected file.
-        FileEditorManager manager = FileEditorManager.getInstance(p);
+        FileEditorManager manager = FileEditorManager.getInstance(project);
         VirtualFile[] files = manager.getSelectedFiles();
         VirtualFile currentFile = files[0];
 
         // Get the PsiClass for the currently selected file.
         final PsiClass[] curClass = new PsiClass[1];
         ApplicationManager.getApplication().runReadAction(() -> {
-            PsiFile psiFile = PsiManager.getInstance(p).findFile(currentFile);
+            PsiFile psiFile = PsiManager.getInstance(project).findFile(currentFile);
             PsiJavaFile psiJavaFile = (PsiJavaFile) psiFile;
             curClass[0] = psiJavaFile.getClasses()[0];
         });
@@ -30,9 +30,9 @@ public class Utilities {
     }
 
 
-    protected static void waitForNumberOfVariablesInClassToChange(int originalNumberOfVariables, StructuredJavaToolWindowFactoryJavaFX ui) {
+    protected static void waitForNumberOfVariablesInClassToChange(int originalNumberOfVariables, PsiClass currentClass) {
         int pollTimeMs = 50;
-        while (ApplicationManager.getApplication().runReadAction((Computable<PsiField[]>) getCurrentClass(ui.getProject())::getFields).length == originalNumberOfVariables) {
+        while (ApplicationManager.getApplication().runReadAction((Computable<PsiField[]>) currentClass::getFields).length == originalNumberOfVariables) {
             try {
                 Thread.sleep(pollTimeMs);
             } catch (InterruptedException e) {
@@ -42,9 +42,9 @@ public class Utilities {
     }
 
 
-    protected static void waitForNumberOfMethodsInClassToChange(int originalNumberOfMethods, Project project) {
+    protected static void waitForNumberOfMethodsInClassToChange(int originalNumberOfMethods, PsiClass currentClass) {
         int pollTimeMs = 50;
-        while (ApplicationManager.getApplication().runReadAction((Computable<PsiMethod[]>) () -> getCurrentMethods(project)).length == originalNumberOfMethods) {
+        while (ApplicationManager.getApplication().runReadAction((Computable<PsiMethod[]>) () -> getCurrentMethods(currentClass)).length == originalNumberOfMethods) {
             try {
                 Thread.sleep(pollTimeMs);
             } catch (InterruptedException e) {
@@ -62,15 +62,13 @@ public class Utilities {
     }
 
 
-    protected static PsiMethod[] getCurrentMethods(Project project) {
-        PsiClass currentClass = getCurrentClass(project);
+    protected static PsiMethod[] getCurrentMethods(PsiClass currentClass) {
         PsiMethod[] psiMethods = ApplicationManager.getApplication().runReadAction((Computable<PsiMethod[]>) currentClass::getMethods);
         return psiMethods;
     }
 
 
-    protected static PsiField[] getCurrentVariables(Project project) {
-        PsiClass currentClass = getCurrentClass(project);
+    protected static PsiField[] getCurrentVariables(PsiClass currentClass) {
         PsiField[] psiFields = ApplicationManager.getApplication().runReadAction((Computable<PsiField[]>) currentClass::getFields);
         return psiFields;
     }
