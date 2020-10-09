@@ -52,6 +52,7 @@ public class ClassOutlineScene extends Scene implements EventHandler<KeyEvent> {
     private TextField newVariableTypeField;
     private TextField newVariableNameField;
     private TextField newVariableInitialValueField;
+    private List<List<ComboBox<String>>> variableModifierComboBoxes = new ArrayList<>();
     private List<TextField> variableNameTextFields = new ArrayList<>();
     private List<TextField> variableInitialValueTextFields = new ArrayList<>();
     private List<TextField> methodNameTextFields = new ArrayList<>();
@@ -60,140 +61,8 @@ public class ClassOutlineScene extends Scene implements EventHandler<KeyEvent> {
     private EventHandler<ActionEvent> addVariableHandler;
 
 
-    public PsiClass getCurrentClass() {
-        return currentClass;
-    }
-
-    public void setCurrentClass(PsiClass currentClass) {
-        this.currentClass = currentClass;
-    }
-
     public KeyboardFocusInfo getKeyboardFocusInfo() {
         return keyboardFocusInfo;
-    }
-
-    public void setKeyboardFocusInfo(KeyboardFocusInfo keyboardFocusInfo) {
-        this.keyboardFocusInfo = keyboardFocusInfo;
-    }
-
-    public List<PsiField> getVariables() {
-        return variables;
-    }
-
-    public void setVariables(List<PsiField> variables) {
-        this.variables = variables;
-    }
-
-    public List<PsiMethod> getMethods() {
-        return methods;
-    }
-
-    public void setMethods(List<PsiMethod> methods) {
-        this.methods = methods;
-    }
-
-    public List<PsiClass> getEnums() {
-        return enums;
-    }
-
-    public void setEnums(List<PsiClass> enums) {
-        this.enums = enums;
-    }
-
-    public List<PsiClass> getInnerClasses() {
-        return innerClasses;
-    }
-
-    public void setInnerClasses(List<PsiClass> innerClasses) {
-        this.innerClasses = innerClasses;
-    }
-
-    public List<List<PsiNamedElement>> getDataAreas() {
-        return dataAreas;
-    }
-
-    public void setDataAreas(List<List<PsiNamedElement>> dataAreas) {
-        this.dataAreas = dataAreas;
-    }
-
-    public Button getAddVariableButton() {
-        return addVariableButton;
-    }
-
-    public void setAddVariableButton(Button addVariableButton) {
-        this.addVariableButton = addVariableButton;
-    }
-
-    public Button getAddMethodButton() {
-        return addMethodButton;
-    }
-
-    public void setAddMethodButton(Button addMethodButton) {
-        this.addMethodButton = addMethodButton;
-    }
-
-    public ComboBox<String> getNewVariableAccessModifierBox() {
-        return newVariableAccessModifierBox;
-    }
-
-    public void setNewVariableAccessModifierBox(ComboBox<String> newVariableAccessModifierBox) {
-        this.newVariableAccessModifierBox = newVariableAccessModifierBox;
-    }
-
-    public ComboBox<String> getNewVariableStaticModifierBox() {
-        return newVariableStaticModifierBox;
-    }
-
-    public void setNewVariableStaticModifierBox(ComboBox<String> newVariableStaticModifierBox) {
-        this.newVariableStaticModifierBox = newVariableStaticModifierBox;
-    }
-
-    public TextField getNewVariableTypeField() {
-        return newVariableTypeField;
-    }
-
-    public void setNewVariableTypeField(TextField newVariableTypeField) {
-        this.newVariableTypeField = newVariableTypeField;
-    }
-
-    public TextField getNewVariableNameField() {
-        return newVariableNameField;
-    }
-
-    public void setNewVariableNameField(TextField newVariableNameField) {
-        this.newVariableNameField = newVariableNameField;
-    }
-
-    public TextField getNewVariableInitialValueField() {
-        return newVariableInitialValueField;
-    }
-
-    public void setNewVariableInitialValueField(TextField newVariableInitialValueField) {
-        this.newVariableInitialValueField = newVariableInitialValueField;
-    }
-
-    public List<TextField> getVariableInitialValueTextFields() {
-        return variableInitialValueTextFields;
-    }
-
-    public void setVariableInitialValueTextFields(List<TextField> variableInitialValueTextFields) {
-        this.variableInitialValueTextFields = variableInitialValueTextFields;
-    }
-
-    public List<TextField> getVariableNameTextFields() {
-        return variableNameTextFields;
-    }
-
-    public void setVariableNameTextFields(List<TextField> variableNameTextFields) {
-        this.variableNameTextFields = variableNameTextFields;
-    }
-
-    public List<TextField> getMethodNameTextFields() {
-        return methodNameTextFields;
-    }
-
-    public void setMethodNameTextFields(List<TextField> methodNameTextFields) {
-        this.methodNameTextFields = methodNameTextFields;
     }
 
     public ClassOutlineScene(VBox root, StructuredJavaToolWindowFactoryJavaFX ui) {
@@ -217,6 +86,7 @@ public class ClassOutlineScene extends Scene implements EventHandler<KeyEvent> {
         Project project = ui.getProject();
         currentClass = Utilities.getCurrentClass(project);
         variables.clear();
+        variableModifierComboBoxes.clear();
         variableNameTextFields.clear();
         variableInitialValueTextFields.clear();
         variables.addAll(Arrays.asList(ApplicationManager.getApplication().runReadAction((Computable<PsiField[]>)currentClass::getFields)));
@@ -290,13 +160,17 @@ public class ClassOutlineScene extends Scene implements EventHandler<KeyEvent> {
 
             // Modifiers
             PsiElement[] modifiers = ApplicationManager.getApplication().runReadAction((Computable<PsiElement[]>) () -> variable.getModifierList().getChildren());
+            List<ComboBox<String>> currentModifiers = new ArrayList<>();
             for (PsiElement modifier : modifiers) {
                 if (modifier.getText().trim().isEmpty()) {
                     continue;
                 }
-                TextField textField = getField(modifier.getText());
-                rowBox.getChildren().add(textField);
+                ComboBox<String> modifierBox = new ComboBox<>(FXCollections.observableArrayList(PsiModifier.MODIFIERS));
+                modifierBox.getSelectionModel().select(modifier.getText());
+                currentModifiers.add(modifierBox);
+                rowBox.getChildren().add(modifierBox);
             }
+            variableModifierComboBoxes.add(currentModifiers);
 
             // Type
             String variableType = ApplicationManager.getApplication().runReadAction((Computable<String>) () -> variable.getType().getPresentableText());
@@ -571,13 +445,17 @@ public class ClassOutlineScene extends Scene implements EventHandler<KeyEvent> {
                         // Do a rename operation if applicable.
                         handleRename();
 
-                        // Change the initial value of a variable if applicable.
+                        // Change the changes to a variable if applicable.
                         if (currentArea == Area.VARIABLE) {
-                            handleVariableInitialValueChange();
+                            setVariableInitialValue();
+                            setVariableModifiers();
                         }
 
                         // Move the focus to row selection and rebuild the ui.
                         keyboardFocusInfo.setFocusLevel(KeyboardFocusInfo.FocusLevel.ROW);
+
+                        // Rebuild the UI.
+                        buildClassOutlineScene();
                         break;
                     }
                 }
@@ -737,7 +615,7 @@ public class ClassOutlineScene extends Scene implements EventHandler<KeyEvent> {
     }
 
 
-    private void handleVariableInitialValueChange() {
+    private void setVariableInitialValue() {
 
         // Get the current initial value in the source and the value in the initial value text field.
         PsiField currentVariable = variables.get(keyboardFocusInfo.getFocusedRow());
@@ -764,10 +642,34 @@ public class ClassOutlineScene extends Scene implements EventHandler<KeyEvent> {
         if (!textFieldInitialValue.equals(originalInitialValue)) {
             WriteCommandAction.runWriteCommandAction(ui.getProject(), setInitialValueAction);
         }
+    }
 
-        // Rebuilt the scene to get rid of the text field if the initial value was removed.
-        // Probably a bit heavy-handed.
-        buildClassOutlineScene();
+
+    private void setVariableModifiers() {
+
+        // Get the current initial value in the source and the value in the initial value text field.
+        PsiField currentVariable = variables.get(keyboardFocusInfo.getFocusedRow());
+        PsiModifierList currentModifierList = ApplicationManager.getApplication().runReadAction((Computable<PsiModifierList>) currentVariable::getModifierList);
+
+        // Build a new modifier list from the modifier combo boxes of the current variable.
+        List<ComboBox<String>> currentVariableModifierBoxes = variableModifierComboBoxes.get(keyboardFocusInfo.getFocusedRow());
+
+        // Define the function to change the list of modifiers for the variable.
+        WriteCommandAction.runWriteCommandAction(ui.getProject(), () ->
+        {
+            // Remove all current modifiers from the variable.
+            for (PsiElement modifier : currentModifierList.getChildren()) {
+                if (modifier.getText().trim().isEmpty()) {
+                    continue;
+                }
+                currentModifierList.setModifierProperty(modifier.getText(), false);
+            }
+
+            // Set new modifiers based on the modifier boxes for the variable.
+            for (ComboBox<String> modifierBox : currentVariableModifierBoxes) {
+                currentModifierList.setModifierProperty(modifierBox.getValue(), true);
+            }
+        });
     }
 
 
