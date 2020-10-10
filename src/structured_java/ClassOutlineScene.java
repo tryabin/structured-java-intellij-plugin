@@ -389,6 +389,8 @@ public class ClassOutlineScene extends Scene implements EventHandler<KeyEvent> {
     public void handle(KeyEvent event) {
         // Get the focused area and component.
         Area currentArea = areaOrdering.get(keyboardFocusInfo.getFocusedAreaIndex());
+        VBox focusedArea = getAreas().get(keyboardFocusInfo.getFocusedAreaIndex());
+        VBox focusedRowArea = (VBox) focusedArea.getChildren().get(1);
         Node focusOwner = focusOwnerProperty().get();
 
         // Consume the event in certain situations to prevent undesirable effects.
@@ -442,20 +444,26 @@ public class ClassOutlineScene extends Scene implements EventHandler<KeyEvent> {
                         break;
                     }
                     case COLUMN: {
-                        // Do a rename operation if applicable.
-                        handleRename();
 
-                        // Change the changes to a variable if applicable.
-                        if (currentArea == Area.VARIABLE) {
-                            setVariableInitialValue();
-                            setVariableModifiers();
+                        // Apply the changes for the row unless it's the last row
+                        // because that adds a new element.
+                        int numRowsInCurrentArea = focusedRowArea.getChildren().size();
+                        if (keyboardFocusInfo.getFocusedRow() != numRowsInCurrentArea - 1) {
+                            // Do a rename operation if applicable.
+                            handleRename();
+
+                            // Make the changes to a variable if applicable.
+                            if (currentArea == Area.VARIABLE) {
+                                setVariableInitialValue();
+                                setVariableModifiers();
+                            }
+
+                            // Rebuild the UI.
+                            buildClassOutlineScene();
                         }
 
                         // Move the focus to row selection and rebuild the ui.
                         keyboardFocusInfo.setFocusLevel(KeyboardFocusInfo.FocusLevel.ROW);
-
-                        // Rebuild the UI.
-                        buildClassOutlineScene();
                         break;
                     }
                 }
@@ -470,9 +478,6 @@ public class ClassOutlineScene extends Scene implements EventHandler<KeyEvent> {
                     Node elementToBeFocused;
                     do {
                         moveFocusRightOneColumn();
-
-                        VBox focusedArea = getAreas().get(keyboardFocusInfo.getFocusedAreaIndex());
-                        VBox focusedRowArea = (VBox) focusedArea.getChildren().get(1);
                         HBox row = (HBox) focusedRowArea.getChildren().get(keyboardFocusInfo.getFocusedRow());
                         elementToBeFocused = row.getChildren().get(keyboardFocusInfo.getFocusedColumn());
                     }
@@ -491,9 +496,6 @@ public class ClassOutlineScene extends Scene implements EventHandler<KeyEvent> {
                     Node elementToBeFocused;
                     do {
                         moveFocusLeftOneColumn();
-
-                        VBox focusedArea = getAreas().get(keyboardFocusInfo.getFocusedAreaIndex());
-                        VBox focusedRowArea = (VBox) focusedArea.getChildren().get(1);
                         HBox row = (HBox) focusedRowArea.getChildren().get(keyboardFocusInfo.getFocusedRow());
                         elementToBeFocused = row.getChildren().get(keyboardFocusInfo.getFocusedColumn());
                     }
