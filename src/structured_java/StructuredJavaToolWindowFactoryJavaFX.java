@@ -52,6 +52,7 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory 
     
 
     public void setSceneToClassOutlineScene() {
+        classOutlineScene = new ClassOutlineScene(new VBox(), this);
         fxPanel.setScene(classOutlineScene);
         methodEditingScene.removeEventHandler(KeyEvent.KEY_PRESSED, methodEditingScene);
     }

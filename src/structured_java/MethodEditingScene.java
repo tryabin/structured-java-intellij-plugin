@@ -271,25 +271,30 @@ public class MethodEditingScene extends Scene implements EventHandler<KeyEvent> 
         methodTextArea = new TextArea(methodData.getSourceText());
         root.getChildren().add(methodTextArea);
 
-        // Add a text listener to the method editing text area so the source code is updated
-        // as soon as the text in the method editing area changes.
+        // Add a key listener to replace tabs with 4 spaces.
         methodTextArea.textProperty().addListener((observable, oldValue, newValue) ->
         {
-            WriteCommandAction.runWriteCommandAction(project, () -> {
-                Editor editor = FileEditorManager.getInstance(project).getSelectedTextEditor();
-                Document document = editor.getDocument();
-
-                // Replace tabs in the method text area with 4 spaces.
-                methodTextArea.setText(methodTextArea.getText().replace("\t", "    "));
-
-                // Need to find the offset of the left bracket because the UI method text is just the body.
-                int leftBracketOffset = Utilities.findOffsetOfSubstring(document.getText(method.getTextRange()), "\\{");
-
-                // Replace the method text in the source file.
-                String uiText = methodTextArea.getText();
-                document.replaceString(method.getTextRange().getStartOffset() + leftBracketOffset, method.getTextRange().getEndOffset(), uiText);
-            });
+            methodTextArea.setText(methodTextArea.getText().replace("\t", "    "));
         });
+
+        // Add a key listener to the method editing text area so the source code is updated
+        // as soon as the text in the method editing area changes.
+        if (method != null) {
+            methodTextArea.textProperty().addListener((observable, oldValue, newValue) ->
+            {
+                WriteCommandAction.runWriteCommandAction(project, () -> {
+                    Editor editor = FileEditorManager.getInstance(project).getSelectedTextEditor();
+                    Document document = editor.getDocument();
+
+                    // Need to find the offset of the left bracket because the UI method text is just the body.
+                    int leftBracketOffset = Utilities.findOffsetOfSubstring(document.getText(method.getTextRange()), "\\{");
+
+                    // Replace the method text in the source file.
+                    String uiText = methodTextArea.getText();
+                    document.replaceString(method.getTextRange().getStartOffset() + leftBracketOffset, method.getTextRange().getEndOffset(), uiText);
+                });
+            });
+        }
     }
 
 
