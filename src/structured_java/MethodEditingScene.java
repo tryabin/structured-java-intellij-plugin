@@ -351,21 +351,39 @@ public class MethodEditingScene extends Scene implements EventHandler<KeyEvent> 
         PsiMethod[] newPsiMethods = ApplicationManager.getApplication().runReadAction((Computable<PsiMethod[]>) currentClass::getMethods);
         for (PsiMethod newMethod : newPsiMethods) {
             String newMethodName = ApplicationManager.getApplication().runReadAction((Computable<String>) newMethod::getName);
-            if (nameField.getText().equals(newMethodName)){
-                MethodData newMethodData = new MethodData(newMethod);
+            if (nameField.getText().equals(newMethodName)) {
                 method = newMethod;
-
-                // Rebuild the UI components.
-                VBox root = new VBox();
-                setRoot(root);
-
-                // Add the back button.
-                root.getChildren().add(backButton);
-
-                // Add the other components.
-                buildSourcePartsOfMethodEditingScene(root, newMethodData, project);
                 break;
             }
+        }
+
+        // Find the index of the currently focused component.
+        int focusedIndex = 0;
+        for (int i = 0; i < methodRow.getChildren().size(); i++) {
+            Node component = methodRow.getChildren().get(i);
+            if (component.equals(getFocusOwner())) {
+                focusedIndex = i;
+                break;
+            }
+        }
+
+        // Rebuild the UI components.
+        VBox root = new VBox();
+        setRoot(root);
+
+        // Add the back button.
+        root.getChildren().add(backButton);
+
+        // Add the other components.
+        MethodData newMethodData = new MethodData(method);
+        buildSourcePartsOfMethodEditingScene(root, newMethodData, project);
+
+        // Set the focused component.
+        if (focusedIndex < methodRow.getChildren().size()) {
+            methodRow.getChildren().get(focusedIndex).requestFocus();
+        }
+        else {
+            methodRow.getChildren().get(methodRow.getChildren().size() - 1).requestFocus();
         }
     }
 }
