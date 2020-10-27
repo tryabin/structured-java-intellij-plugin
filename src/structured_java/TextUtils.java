@@ -4,6 +4,9 @@ import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextBoundsType;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 public class TextUtils {
 
     static final Text helper;
@@ -19,10 +22,8 @@ public class TextUtils {
         DEFAULT_BOUNDS_TYPE = helper.getBoundsType();
     }
 
-    public static double computeTextWidth(Font font, String text, double help0) {
-        // Toolkit.getToolkit().getFontLoader().computeStringWidth(field.getText(),
-        // field.getFont());
 
+    public static double computeTextWidth(Font font, String text, double help0) {
         helper.setText(text);
         helper.setFont(font);
 
@@ -36,5 +37,12 @@ public class TextUtils {
         helper.setLineSpacing(DEFAULT_LINE_SPACING);
         helper.setText(DEFAULT_TEXT);
         return d;
+    }
+
+
+    public static int indexOf(String patternString, String stringToSearchIn) {
+        Pattern pattern = Pattern.compile(patternString);
+        Matcher matcher = pattern.matcher(stringToSearchIn);
+        return matcher.find() ? matcher.start() : -1;
     }
 }

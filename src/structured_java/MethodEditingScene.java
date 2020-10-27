@@ -4,6 +4,7 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
+import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Computable;
@@ -22,8 +23,11 @@ import javafx.scene.control.TextField;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Font;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static javafx.scene.input.KeyCode.DELETE;
@@ -43,6 +47,8 @@ public class MethodEditingScene extends Scene implements EventHandler<KeyEvent> 
     private TextArea methodTextArea;
     private Button saveMethodButton;
     private HBox methodRow;
+    private boolean isForAddingNewMethod;
+    private int initialIndexAmount;
 
     public Project getProject() {
         return project;
@@ -132,6 +138,22 @@ public class MethodEditingScene extends Scene implements EventHandler<KeyEvent> 
         this.methodRow = methodRow;
     }
 
+    public boolean isForAddingNewMethod() {
+        return isForAddingNewMethod;
+    }
+
+    public void setForAddingNewMethod(boolean forAddingNewMethod) {
+        isForAddingNewMethod = forAddingNewMethod;
+    }
+
+    public int getInitialIndexAmount() {
+        return initialIndexAmount;
+    }
+
+    public void setInitialIndexAmount(int initialIndexAmount) {
+        this.initialIndexAmount = initialIndexAmount;
+    }
+
 
     public MethodEditingScene(VBox root, StructuredJavaToolWindowFactoryJavaFX ui) {
         super(root);
@@ -141,6 +163,7 @@ public class MethodEditingScene extends Scene implements EventHandler<KeyEvent> 
         addEventHandler(KeyEvent.KEY_PRESSED, this);
 
         // Create an empty method editing scene.
+        isForAddingNewMethod = true;
         MethodData emptyMethodData = new MethodData();
         buildMethodEditingScene(root, emptyMethodData, ui);
 
@@ -159,7 +182,8 @@ public class MethodEditingScene extends Scene implements EventHandler<KeyEvent> 
         // Make the UI handle key events.
         addEventHandler(KeyEvent.KEY_PRESSED, this);
 
-        // Get the method data.
+        // Create a non-empty method editing scene.
+        isForAddingNewMethod = false;
         MethodData methodData = new MethodData(method);
         buildMethodEditingScene(root, methodData, ui);
     }
@@ -267,8 +291,29 @@ public class MethodEditingScene extends Scene implements EventHandler<KeyEvent> 
 
         root.getChildren().add(methodRow);
 
-        // Method source text
-        methodTextArea = new TextArea(methodData.getSourceText());
+        // Method source text editing field
+        // Get the method source text and adjust it to not have brackets or starting indents.
+        String methodTextAreaString = methodData.getSourceText();
+        if (!isForAddingNewMethod) {
+            String sourceText = methodData.getSourceText();
+            String sourceTextNoBrackets = sourceText.substring(1, sourceText.length() - 1);
+            List<String> lines = Arrays.asList(sourceTextNoBrackets.split("\n"));
+            lines = lines.subList(1, lines.size()-1);
+            initialIndexAmount = TextUtils.indexOf("[^\\s]", lines.get(0));
+            methodTextAreaString = "";
+            for (String line : lines) {
+                methodTextAreaString += line.substring(initialIndexAmount) + "\n";
+            }
+        }
+        methodTextArea = new TextArea(methodTextAreaString);
+
+        // Set the method source text area styling.
+        WriteCommandAction.runWriteCommandAction(project, () -> {
+            Editor editor = EditorFactory.getInstance().createEditor(FileEditorManager.getInstance(project).getSelectedTextEditor().getDocument(), project);
+            String defaultFont = editor.getColorsScheme().getConsoleFontName();
+            int defaultFontSize = editor.getColorsScheme().getConsoleFontSize();
+            methodTextArea.setFont(new Font(defaultFont, defaultFontSize));
+        });
         root.getChildren().add(methodTextArea);
 
         // Add a key listener to replace tabs with 4 spaces.
@@ -289,9 +334,9 @@ public class MethodEditingScene extends Scene implements EventHandler<KeyEvent> 
                     // Need to find the offset of the left bracket because the UI method text is just the body.
                     int leftBracketOffset = Utilities.findOffsetOfSubstring(document.getText(method.getTextRange()), "\\{");
 
-                    // Replace the method text in the source file.
-                    String uiText = methodTextArea.getText();
-                    document.replaceString(method.getTextRange().getStartOffset() + leftBracketOffset, method.getTextRange().getEndOffset(), uiText);
+                    // Replace the source text.
+                    String sourceText = convertMethodAreaTextToSourceText(initialIndexAmount);
+                    document.replaceString(method.getTextRange().getStartOffset() + leftBracketOffset + 1, method.getTextRange().getEndOffset() - 1, sourceText);
                 });
             });
         }
@@ -385,5 +430,22 @@ public class MethodEditingScene extends Scene implements EventHandler<KeyEvent> 
         else {
             methodRow.getChildren().get(methodRow.getChildren().size() - 1).requestFocus();
         }
+    }
+
+
+    /**
+     * Get the current text from the text area and modify it slightly so it looks correct in the source.
+     * @param indentAmount The indent amount for the lines.
+     * @return
+     */
+    public String convertMethodAreaTextToSourceText(int indentAmount) {
+        String sourceText = "";
+        for (String line : methodTextArea.getText().split("\n")) {
+            sourceText += StringUtils.repeat(" ", indentAmount);
+            sourceText += line + "\n";
+        }
+        sourceText = "\n" + sourceText + "    ";
+
+        return sourceText;
     }
 }

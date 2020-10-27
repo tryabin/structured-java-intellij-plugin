@@ -13,7 +13,6 @@ import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
-import javafx.scene.layout.VBox;
 
 import java.util.Arrays;
 import java.util.List;
@@ -22,6 +21,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static structured_java.Utilities.getCurrentClass;
 
 public class AddMethodHandler implements EventHandler<ActionEvent> {
+
+    public static final int DEFAULT_INDENT_AMOUNT = 8;
 
     private StructuredJavaToolWindowFactoryJavaFX ui;
 
@@ -122,7 +123,9 @@ public class AddMethodHandler implements EventHandler<ActionEvent> {
             }
 
             // Method body
-            methodTextToInsert += methodEditingScene.getMethodTextArea().getText();
+            methodTextToInsert += " {";
+            String sourceText = methodEditingScene.convertMethodAreaTextToSourceText(DEFAULT_INDENT_AMOUNT);
+            methodTextToInsert += sourceText + "}";
 
             // Add the new method to the class.
             Editor editor =  FileEditorManager.getInstance(project).getSelectedTextEditor();

@@ -4,13 +4,13 @@ import javafx.scene.control.TextField;
 
 public class UserInterfaceUtilities {
 
-
     public static TextField getField(String field) {
         TextField textField = getField();
         textField.setText(field);
 
         return textField;
     }
+
 
     public static TextField getField() {
         TextField textField = new TextField();
