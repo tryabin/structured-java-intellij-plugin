@@ -2,6 +2,7 @@ package structured_java;
 
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
+import javafx.scene.text.TextAlignment;
 import javafx.scene.text.TextBoundsType;
 
 import java.util.regex.Matcher;
@@ -36,6 +37,7 @@ public class TextUtils {
         helper.setWrappingWidth(DEFAULT_WRAPPING_WIDTH);
         helper.setLineSpacing(DEFAULT_LINE_SPACING);
         helper.setText(DEFAULT_TEXT);
+        helper.setTextAlignment(TextAlignment.CENTER);
         return d;
     }
 

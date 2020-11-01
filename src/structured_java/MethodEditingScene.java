@@ -4,7 +4,6 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
-import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Computable;
@@ -23,7 +22,6 @@ import javafx.scene.control.TextField;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import javafx.scene.text.Font;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
@@ -33,11 +31,21 @@ import java.util.List;
 import static javafx.scene.input.KeyCode.DELETE;
 import static javafx.scene.input.KeyCode.ENTER;
 import static structured_java.UserInterfaceUtilities.getField;
+import static structured_java.UserInterfaceUtilities.getStyleString;
 
 public class MethodEditingScene extends Scene implements EventHandler<KeyEvent> {
 
-    private Project project;
+    // Constants
+    private static final int METHOD_HEADER_FONT_SIZE = 20;
+
+    // The link back to the main UI
+    private StructuredJavaToolWindowFactoryJavaFX ui;
+
+    // Data elements
     private PsiMethod method;
+    private boolean isForAddingNewMethod;
+
+    // GUI components
     private Button backButton;
     private List<ComboBox<String>> modifierBoxes = new ArrayList<>();
     private TextField returnTypeField;
@@ -47,15 +55,17 @@ public class MethodEditingScene extends Scene implements EventHandler<KeyEvent> 
     private TextArea methodTextArea;
     private Button saveMethodButton;
     private HBox methodRow;
-    private boolean isForAddingNewMethod;
+
+    // Formatting parameters
     private int initialIndexAmount;
 
-    public Project getProject() {
-        return project;
+
+    public StructuredJavaToolWindowFactoryJavaFX getUi() {
+        return ui;
     }
 
-    public void setProject(Project project) {
-        this.project = project;
+    public void setUi(StructuredJavaToolWindowFactoryJavaFX ui) {
+        this.ui = ui;
     }
 
     public PsiMethod getMethod() {
@@ -157,7 +167,7 @@ public class MethodEditingScene extends Scene implements EventHandler<KeyEvent> 
 
     public MethodEditingScene(VBox root, StructuredJavaToolWindowFactoryJavaFX ui) {
         super(root);
-        this.project = ui.getProject();
+        this.ui = ui;
 
         // Make the UI handle key events.
         addEventHandler(KeyEvent.KEY_PRESSED, this);
@@ -165,7 +175,7 @@ public class MethodEditingScene extends Scene implements EventHandler<KeyEvent> 
         // Create an empty method editing scene.
         isForAddingNewMethod = true;
         MethodData emptyMethodData = new MethodData();
-        buildMethodEditingScene(root, emptyMethodData, ui);
+        buildMethodEditingScene(root, emptyMethodData);
 
         // Save method button
         saveMethodButton = new Button("Save Method");
@@ -177,7 +187,7 @@ public class MethodEditingScene extends Scene implements EventHandler<KeyEvent> 
     public MethodEditingScene(VBox root, PsiMethod selectedMethod, StructuredJavaToolWindowFactoryJavaFX ui) {
         super (root);
         this.method = selectedMethod;
-        this.project = ui.getProject();
+        this.ui = ui;
 
         // Make the UI handle key events.
         addEventHandler(KeyEvent.KEY_PRESSED, this);
@@ -185,11 +195,12 @@ public class MethodEditingScene extends Scene implements EventHandler<KeyEvent> 
         // Create a non-empty method editing scene.
         isForAddingNewMethod = false;
         MethodData methodData = new MethodData(method);
-        buildMethodEditingScene(root, methodData, ui);
+        buildMethodEditingScene(root, methodData);
     }
 
 
-    private void buildMethodEditingScene(VBox root, MethodData methodData, StructuredJavaToolWindowFactoryJavaFX ui) {
+    private void buildMethodEditingScene(VBox root, MethodData methodData) {
+
         // Back button
         backButton = new Button("Back");
         backButton.setOnAction(event -> ui.setSceneToClassOutlineScene());
@@ -210,9 +221,11 @@ public class MethodEditingScene extends Scene implements EventHandler<KeyEvent> 
         methodRow.setSpacing(5);
 
         // Modifier dropdowns
+        String fieldStyle = getStyleString(ui.getDefaultFont().getName(), METHOD_HEADER_FONT_SIZE);
         for (String modifier : methodData.getModifiers()) {
             ComboBox<String> modifierBox = new ComboBox<>(FXCollections.observableArrayList(PsiModifier.MODIFIERS));
             modifierBox.getSelectionModel().select(modifier);
+            modifierBox.setStyle(fieldStyle);
             methodRow.getChildren().add(modifierBox);
             modifierBoxes.add(modifierBox);
 
@@ -236,25 +249,27 @@ public class MethodEditingScene extends Scene implements EventHandler<KeyEvent> 
 
         // Add modifier button
         Button addModifierButton = new Button("Add Modifier");
+        addModifierButton.setStyle(fieldStyle);
         methodRow.getChildren().add(addModifierButton);
         addModifierButton.setOnAction(event ->  {
             ComboBox<String> modifierBox = new ComboBox<>(FXCollections.observableArrayList(PsiModifier.MODIFIERS));
+            modifierBox.setStyle(fieldStyle);
             methodRow.getChildren().add(modifierBoxes.size(), modifierBox);
             modifierBoxes.add(modifierBox);
             modifierBox.requestFocus();
         });
 
         // Type text field
-        returnTypeField = getField(methodData.getReturnType());
+        returnTypeField = getField(methodData.getReturnType(), ui.getDefaultFont().getName(), METHOD_HEADER_FONT_SIZE);
         methodRow.getChildren().add(returnTypeField);
 
         // Name field
-        nameField = getField(methodData.getName());
+        nameField = getField(methodData.getName(), ui.getDefaultFont().getName(), METHOD_HEADER_FONT_SIZE);
         methodRow.getChildren().add(nameField);
 
         // Parameters fields
         for (String parameter : methodData.getParameters()) {
-            TextField parameterField = getField(parameter);
+            TextField parameterField = getField(parameter, ui.getDefaultFont().getName(), METHOD_HEADER_FONT_SIZE);
             parameterFields.add(parameterField);
             methodRow.getChildren().add(parameterField);
 
@@ -279,9 +294,10 @@ public class MethodEditingScene extends Scene implements EventHandler<KeyEvent> 
 
         // Add parameter button
         addParameterButton = new Button("Add Parameter");
+        addParameterButton.setStyle(fieldStyle);
         methodRow.getChildren().add(addParameterButton);
         addParameterButton.setOnAction(event ->  {
-            TextField newParameterTextField = getField("<Parameter Type and Name>");
+            TextField newParameterTextField = getField("<Parameter Type and Name>", ui.getDefaultFont().getName(), METHOD_HEADER_FONT_SIZE);
             newParameterTextField.selectAll();
             methodRow.getChildren().add(methodRow.getChildren().size() - 1, newParameterTextField);
             parameterFields.add(newParameterTextField);
@@ -307,13 +323,8 @@ public class MethodEditingScene extends Scene implements EventHandler<KeyEvent> 
         }
         methodTextArea = new TextArea(methodTextAreaString);
 
-        // Set the method source text area styling.
-        WriteCommandAction.runWriteCommandAction(project, () -> {
-            Editor editor = EditorFactory.getInstance().createEditor(FileEditorManager.getInstance(project).getSelectedTextEditor().getDocument(), project);
-            String defaultFont = editor.getColorsScheme().getConsoleFontName();
-            int defaultFontSize = editor.getColorsScheme().getConsoleFontSize();
-            methodTextArea.setFont(new Font(defaultFont, defaultFontSize));
-        });
+        // Set the method source text area font.
+        methodTextArea.setFont(ui.getDefaultFont());
         root.getChildren().add(methodTextArea);
 
         // Add a key listener to replace tabs with 4 spaces.
@@ -364,7 +375,7 @@ public class MethodEditingScene extends Scene implements EventHandler<KeyEvent> 
 
 
     private void editMethodSource() {
-        PsiClass currentClass = Utilities.getCurrentClass(project);
+        PsiClass currentClass = Utilities.getCurrentClass(ui.getProject());
         PsiMethod[] currentMethods = Utilities.getCurrentMethods(currentClass);
         PsiField[] currentVariables = Utilities.getCurrentVariables(currentClass);
         int originalNumberOfMethods = currentMethods.length;
@@ -388,7 +399,7 @@ public class MethodEditingScene extends Scene implements EventHandler<KeyEvent> 
         }
 
         // Delete the current method and then insert the new method in its place.
-        WriteCommandAction.writeCommandAction(project).run(() -> method.delete());
+        WriteCommandAction.writeCommandAction(ui.getProject()).run(() -> method.delete());
         Utilities.waitForNumberOfMethodsInClassToChange(originalNumberOfMethods, currentClass);
         AddMethodHandler.insertNewMethodText(this, offsetToInsertNewMethod);
 
@@ -421,7 +432,7 @@ public class MethodEditingScene extends Scene implements EventHandler<KeyEvent> 
 
         // Add the other components.
         MethodData newMethodData = new MethodData(method);
-        buildSourcePartsOfMethodEditingScene(root, newMethodData, project);
+        buildSourcePartsOfMethodEditingScene(root, newMethodData, ui.getProject());
 
         // Set the focused component.
         if (focusedIndex < methodRow.getChildren().size()) {

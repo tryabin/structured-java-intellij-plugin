@@ -6,6 +6,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.*;
+import javafx.scene.text.Font;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -71,5 +72,16 @@ public class Utilities {
     protected static PsiField[] getCurrentVariables(PsiClass currentClass) {
         PsiField[] psiFields = ApplicationManager.getApplication().runReadAction((Computable<PsiField[]>) currentClass::getFields);
         return psiFields;
+    }
+
+
+    protected static Font getDefaultFont(Project project) {
+        // return ApplicationManager.getApplication().runReadAction((Computable<Font>) () -> {
+        //     Editor editor = EditorFactory.getInstance().createEditor(FileEditorManager.getInstance(project).getSelectedTextEditor().getDocument(), project);
+        //     String defaultFontName = editor.getColorsScheme().getEditorFontName();
+        //     int defaultFontSize = editor.getColorsScheme().getEditorFontSize();
+        //     return Font.font(defaultFontName, defaultFontSize);
+        // });
+        return Font.font("Consolas");
     }
 }

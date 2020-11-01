@@ -9,6 +9,7 @@ import javafx.application.Platform;
 import javafx.embed.swing.JFXPanel;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Font;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -20,6 +21,7 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory 
     private ClassOutlineScene classOutlineScene;
     private MethodEditingScene methodEditingScene;
     private JFXPanel fxPanel;
+    private Font defaultFont;
 
     public Project getProject() {
         return project;
@@ -33,11 +35,20 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory 
         return methodEditingScene;
     }
 
+    public Font getDefaultFont() {
+        return defaultFont;
+    }
+
+    public void setDefaultFont(Font defaultFont) {
+        this.defaultFont = defaultFont;
+    }
+
     @Override
     public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
         this.project = project;
         fxPanel = new JFXPanel();
         JComponent component = toolWindow.getComponent();
+        defaultFont = Utilities.getDefaultFont(project);
 
         // Start the Structured Java tool window UI.
         DumbService.getInstance(project).smartInvokeLater(() -> Platform.runLater(() -> {

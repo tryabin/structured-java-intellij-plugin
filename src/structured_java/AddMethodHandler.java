@@ -85,7 +85,7 @@ public class AddMethodHandler implements EventHandler<ActionEvent> {
 
     public static void insertNewMethodText(MethodEditingScene methodEditingScene, int offsetToInsertMethod) {
         // Get the class methods.
-        Project project = methodEditingScene.getProject();
+        Project project = methodEditingScene.getUi().getProject();
         PsiClass currentClass = getCurrentClass(project);
         PsiMethod[] psiMethods = ApplicationManager.getApplication().runReadAction((Computable<PsiMethod[]>) currentClass::getMethods);
 
