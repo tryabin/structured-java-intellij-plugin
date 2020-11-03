@@ -1,6 +1,8 @@
 package structured_java;
 
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.editor.Editor;
+import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Computable;
@@ -82,6 +84,17 @@ public class Utilities {
         //     int defaultFontSize = editor.getColorsScheme().getEditorFontSize();
         //     return Font.font(defaultFontName, defaultFontSize);
         // });
+        // return Font.font("Monospaced");
         return Font.font("Consolas");
+    }
+
+
+    protected static Font getDefaultEditorFont(Project project) {
+        return ApplicationManager.getApplication().runReadAction((Computable<Font>) () -> {
+            Editor editor = EditorFactory.getInstance().createEditor(FileEditorManager.getInstance(project).getSelectedTextEditor().getDocument(), project);
+            String defaultFontName = editor.getColorsScheme().getEditorFontName();
+            int defaultFontSize = editor.getColorsScheme().getEditorFontSize();
+            return Font.font(defaultFontName, defaultFontSize);
+        });
     }
 }

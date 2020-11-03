@@ -10,7 +10,6 @@ import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiField;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
-import javafx.scene.layout.VBox;
 
 import java.util.Arrays;
 import java.util.List;

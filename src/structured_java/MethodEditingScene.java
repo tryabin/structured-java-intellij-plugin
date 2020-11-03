@@ -221,7 +221,7 @@ public class MethodEditingScene extends Scene implements EventHandler<KeyEvent> 
         methodRow.setSpacing(5);
 
         // Modifier dropdowns
-        String fieldStyle = getStyleString(ui.getDefaultFont().getName(), METHOD_HEADER_FONT_SIZE);
+        String fieldStyle = getStyleString(ui.getDefaultUiFont().getName(), METHOD_HEADER_FONT_SIZE);
         for (String modifier : methodData.getModifiers()) {
             ComboBox<String> modifierBox = new ComboBox<>(FXCollections.observableArrayList(PsiModifier.MODIFIERS));
             modifierBox.getSelectionModel().select(modifier);
@@ -260,16 +260,16 @@ public class MethodEditingScene extends Scene implements EventHandler<KeyEvent> 
         });
 
         // Type text field
-        returnTypeField = getField(methodData.getReturnType(), ui.getDefaultFont().getName(), METHOD_HEADER_FONT_SIZE);
+        returnTypeField = getField(methodData.getReturnType(), ui.getDefaultUiFont().getName(), METHOD_HEADER_FONT_SIZE);
         methodRow.getChildren().add(returnTypeField);
 
         // Name field
-        nameField = getField(methodData.getName(), ui.getDefaultFont().getName(), METHOD_HEADER_FONT_SIZE);
+        nameField = getField(methodData.getName(), ui.getDefaultUiFont().getName(), METHOD_HEADER_FONT_SIZE);
         methodRow.getChildren().add(nameField);
 
         // Parameters fields
         for (String parameter : methodData.getParameters()) {
-            TextField parameterField = getField(parameter, ui.getDefaultFont().getName(), METHOD_HEADER_FONT_SIZE);
+            TextField parameterField = getField(parameter, ui.getDefaultUiFont().getName(), METHOD_HEADER_FONT_SIZE);
             parameterFields.add(parameterField);
             methodRow.getChildren().add(parameterField);
 
@@ -297,7 +297,7 @@ public class MethodEditingScene extends Scene implements EventHandler<KeyEvent> 
         addParameterButton.setStyle(fieldStyle);
         methodRow.getChildren().add(addParameterButton);
         addParameterButton.setOnAction(event ->  {
-            TextField newParameterTextField = getField("<Parameter Type and Name>", ui.getDefaultFont().getName(), METHOD_HEADER_FONT_SIZE);
+            TextField newParameterTextField = getField("<Parameter Type and Name>", ui.getDefaultUiFont().getName(), METHOD_HEADER_FONT_SIZE);
             newParameterTextField.selectAll();
             methodRow.getChildren().add(methodRow.getChildren().size() - 1, newParameterTextField);
             parameterFields.add(newParameterTextField);
@@ -324,7 +324,7 @@ public class MethodEditingScene extends Scene implements EventHandler<KeyEvent> 
         methodTextArea = new TextArea(methodTextAreaString);
 
         // Set the method source text area font.
-        methodTextArea.setFont(ui.getDefaultFont());
+        methodTextArea.setFont(ui.getDefaultEditorFont());
         root.getChildren().add(methodTextArea);
 
         // Add a key listener to replace tabs with 4 spaces.

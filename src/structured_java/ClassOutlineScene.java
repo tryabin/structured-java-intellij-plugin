@@ -177,7 +177,7 @@ public class ClassOutlineScene extends Scene implements EventHandler<KeyEvent> {
                 }
                 ComboBox<String> modifierBox = new ComboBox<>(FXCollections.observableArrayList(PsiModifier.MODIFIERS));
                 modifierBox.getSelectionModel().select(modifier.getText());
-                modifierBox.setStyle(getStyleString(ui.getDefaultFont().getName(), FIELD_FONT_SIZE));
+                modifierBox.setStyle(getStyleString(ui.getDefaultUiFont().getName(), FIELD_FONT_SIZE));
                 currentModifiers.add(modifierBox);
                 rowBox.getChildren().add(modifierBox);
             }
@@ -185,12 +185,12 @@ public class ClassOutlineScene extends Scene implements EventHandler<KeyEvent> {
 
             // Type
             String variableType = ApplicationManager.getApplication().runReadAction((Computable<String>) () -> variable.getType().getPresentableText());
-            TextField variableTypeField = getField(variableType, ui.getDefaultFont().getName(), FIELD_FONT_SIZE);
+            TextField variableTypeField = getField(variableType, ui.getDefaultUiFont().getName(), FIELD_FONT_SIZE);
             rowBox.getChildren().add(variableTypeField);
 
             // Name
             String variableName = ApplicationManager.getApplication().runReadAction((Computable<String>) variable::getName);
-            TextField nameField = getField(variableName, ui.getDefaultFont().getName(), FIELD_FONT_SIZE);
+            TextField nameField = getField(variableName, ui.getDefaultUiFont().getName(), FIELD_FONT_SIZE);
             variableNameTextFields.add(nameField);
             rowBox.getChildren().add(nameField);
 
@@ -200,17 +200,17 @@ public class ClassOutlineScene extends Scene implements EventHandler<KeyEvent> {
 
             // '=' label.
             Label equalsSign = new Label(" = ");
-            equalsSign.setStyle(getStyleString(ui.getDefaultFont().getName(), FIELD_FONT_SIZE));
+            equalsSign.setStyle(getStyleString(ui.getDefaultUiFont().getName(), FIELD_FONT_SIZE));
             rowBox.getChildren().add(equalsSign);
 
             // Initial value field.
-            TextField initialValueField = getField("", ui.getDefaultFont().getName(), FIELD_FONT_SIZE);
+            TextField initialValueField = getField("", ui.getDefaultUiFont().getName(), FIELD_FONT_SIZE);
             variableInitialValueTextFields.add(initialValueField);
             rowBox.getChildren().add(initialValueField);
 
             // Add initial value button.
             Button addInitialValueButton = new Button("Set Initial Value");
-            addInitialValueButton.setStyle(getStyleString(ui.getDefaultFont().getName(), FIELD_FONT_SIZE));
+            addInitialValueButton.setStyle(getStyleString(ui.getDefaultUiFont().getName(), FIELD_FONT_SIZE));
             rowBox.getChildren().add(addInitialValueButton);
 
             // When the button is pressed it is hidden and the text field is made visible.
@@ -255,35 +255,35 @@ public class ClassOutlineScene extends Scene implements EventHandler<KeyEvent> {
         // The access modifier dropdown.
         newVariableAccessModifierBox = new ComboBox<>(ACCESS_MODIFIERS);
         newVariableAccessModifierBox.getSelectionModel().selectFirst();
-        newVariableAccessModifierBox.setStyle(getStyleString(ui.getDefaultFont().getName(), FIELD_FONT_SIZE));
+        newVariableAccessModifierBox.setStyle(getStyleString(ui.getDefaultUiFont().getName(), FIELD_FONT_SIZE));
         newVariableRow.getChildren().add(newVariableAccessModifierBox);
 
         // Static or non-stick dropdown.
         newVariableStaticModifierBox = new ComboBox<>(FXCollections.observableArrayList("non-static", "static"));
         newVariableStaticModifierBox.getSelectionModel().selectFirst();
-        newVariableStaticModifierBox.setStyle(getStyleString(ui.getDefaultFont().getName(), FIELD_FONT_SIZE));
+        newVariableStaticModifierBox.setStyle(getStyleString(ui.getDefaultUiFont().getName(), FIELD_FONT_SIZE));
         newVariableRow.getChildren().add(newVariableStaticModifierBox);
 
         // Type text field.
-        newVariableTypeField = getField("<Type>", ui.getDefaultFont().getName(), FIELD_FONT_SIZE);
+        newVariableTypeField = getField("<Type>", ui.getDefaultUiFont().getName(), FIELD_FONT_SIZE);
         newVariableRow.getChildren().add(newVariableTypeField);
 
         // Name field.
-        newVariableNameField = getField("<Name>", ui.getDefaultFont().getName(), FIELD_FONT_SIZE);
+        newVariableNameField = getField("<Name>", ui.getDefaultUiFont().getName(), FIELD_FONT_SIZE);
         newVariableRow.getChildren().add(newVariableNameField);
 
         // '=' label.
         Label equalsSign = new Label(" = ");
-        equalsSign.setStyle(getStyleString(ui.getDefaultFont().getName(), FIELD_FONT_SIZE));
+        equalsSign.setStyle(getStyleString(ui.getDefaultUiFont().getName(), FIELD_FONT_SIZE));
         newVariableRow.getChildren().add(equalsSign);
 
         // Initial value field.
-        newVariableInitialValueField = getField("<Initial Value>", ui.getDefaultFont().getName(), FIELD_FONT_SIZE);
+        newVariableInitialValueField = getField("<Initial Value>", ui.getDefaultUiFont().getName(), FIELD_FONT_SIZE);
         newVariableRow.getChildren().add(newVariableInitialValueField);
 
         // The button to add a variable.
         addVariableButton = new Button("Add Variable");
-        addVariableButton.setStyle(getStyleString(ui.getDefaultFont().getName(), FIELD_FONT_SIZE));
+        addVariableButton.setStyle(getStyleString(ui.getDefaultUiFont().getName(), FIELD_FONT_SIZE));
         addVariableButton.setOnAction(addVariableHandler);
         newVariableRow.getChildren().add(addVariableButton);
         areaRowBox.getChildren().add(newVariableRow);
@@ -291,7 +291,7 @@ public class ClassOutlineScene extends Scene implements EventHandler<KeyEvent> {
         // Build the root component of the area.
         VBox area = new VBox();
         Label label = new Label("Variables");
-        label.setFont(Font.font(ui.getDefaultFont().getName(), FontWeight.BOLD, AREA_LABEL_FONT_SIZE));
+        label.setFont(Font.font(ui.getDefaultUiFont().getName(), FontWeight.BOLD, AREA_LABEL_FONT_SIZE));
         area.getChildren().add(label);
         area.getChildren().add(areaRowBox);
 
@@ -311,7 +311,7 @@ public class ClassOutlineScene extends Scene implements EventHandler<KeyEvent> {
 
         // Create a row for the button to add a new method.
         addMethodButton = new Button("Add Method");
-        addMethodButton.setStyle(getStyleString(ui.getDefaultFont().getName(), FIELD_FONT_SIZE));
+        addMethodButton.setStyle(getStyleString(ui.getDefaultUiFont().getName(), FIELD_FONT_SIZE));
         addMethodButton.setOnAction(event -> {
             ui.setSceneToEmptyMethodEditingScene();
         });
@@ -322,7 +322,7 @@ public class ClassOutlineScene extends Scene implements EventHandler<KeyEvent> {
         // Build the root component of the area.
         VBox area = new VBox();
         Label label = new Label("Methods");
-        label.setFont(Font.font(ui.getDefaultFont().getName(), FontWeight.BOLD, AREA_LABEL_FONT_SIZE));
+        label.setFont(Font.font(ui.getDefaultUiFont().getName(), FontWeight.BOLD, AREA_LABEL_FONT_SIZE));
         area.getChildren().add(label);
         area.getChildren().add(areaRowBox);
 
@@ -876,7 +876,7 @@ public class ClassOutlineScene extends Scene implements EventHandler<KeyEvent> {
             if (modifier instanceof PsiWhiteSpace) {
                 continue;
             }
-            TextField modifierField = getField(modifier.getText(), ui.getDefaultFont().getName(), FIELD_FONT_SIZE);
+            TextField modifierField = getField(modifier.getText(), ui.getDefaultUiFont().getName(), FIELD_FONT_SIZE);
             rowBox.getChildren().add(modifierField);
         }
 
@@ -884,7 +884,7 @@ public class ClassOutlineScene extends Scene implements EventHandler<KeyEvent> {
         boolean methodIsConstructor = ApplicationManager.getApplication().runReadAction((Computable<Boolean>) method::isConstructor);
         if (!methodIsConstructor) {
             String methodReturnType = ApplicationManager.getApplication().runReadAction((Computable<String>) () -> method.getReturnType().getPresentableText());
-            TextField returnTypeField = getField(methodReturnType, ui.getDefaultFont().getName(), FIELD_FONT_SIZE);
+            TextField returnTypeField = getField(methodReturnType, ui.getDefaultUiFont().getName(), FIELD_FONT_SIZE);
             rowBox.getChildren().add(returnTypeField);
         }
 
@@ -894,7 +894,7 @@ public class ClassOutlineScene extends Scene implements EventHandler<KeyEvent> {
 
         // Name
         String methodName = ApplicationManager.getApplication().runReadAction((Computable<String>) method::getName);
-        TextField methodNameField = getField(methodName, ui.getDefaultFont().getName(), FIELD_FONT_SIZE);
+        TextField methodNameField = getField(methodName, ui.getDefaultUiFont().getName(), FIELD_FONT_SIZE);
         methodNameTextFields.add(methodNameField);
         rowBox.getChildren().add(methodNameField);
 
@@ -910,7 +910,7 @@ public class ClassOutlineScene extends Scene implements EventHandler<KeyEvent> {
             String type = ApplicationManager.getApplication().runReadAction((Computable<String>) () -> parameter.getType().getPresentableText());
             String name = ApplicationManager.getApplication().runReadAction((Computable<String>) parameter::getName);
             String parameterString = type + " " + name;
-            TextField parameterField = getField(parameterString, ui.getDefaultFont().getName(), FIELD_FONT_SIZE);
+            TextField parameterField = getField(parameterString, ui.getDefaultUiFont().getName(), FIELD_FONT_SIZE);
             parametersComponent.getChildren().add(parameterField);
         }
 

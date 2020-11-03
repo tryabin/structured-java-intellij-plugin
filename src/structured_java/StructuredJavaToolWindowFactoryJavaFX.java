@@ -21,7 +21,8 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory 
     private ClassOutlineScene classOutlineScene;
     private MethodEditingScene methodEditingScene;
     private JFXPanel fxPanel;
-    private Font defaultFont;
+    private Font defaultUiFont;
+    private Font defaultEditorFont;
 
     public Project getProject() {
         return project;
@@ -35,12 +36,20 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory 
         return methodEditingScene;
     }
 
-    public Font getDefaultFont() {
-        return defaultFont;
+    public Font getDefaultUiFont() {
+        return defaultUiFont;
     }
 
-    public void setDefaultFont(Font defaultFont) {
-        this.defaultFont = defaultFont;
+    public void setDefaultUiFont(Font defaultUiFont) {
+        this.defaultUiFont = defaultUiFont;
+    }
+
+    public Font getDefaultEditorFont() {
+        return defaultEditorFont;
+    }
+
+    public void setDefaultEditorFont(Font defaultEditorFont) {
+        this.defaultEditorFont = defaultEditorFont;
     }
 
     @Override
@@ -48,7 +57,8 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory 
         this.project = project;
         fxPanel = new JFXPanel();
         JComponent component = toolWindow.getComponent();
-        defaultFont = Utilities.getDefaultFont(project);
+        defaultUiFont = Utilities.getDefaultFont(project);
+        defaultEditorFont = Utilities.getDefaultEditorFont(project);
 
         // Start the Structured Java tool window UI.
         DumbService.getInstance(project).smartInvokeLater(() -> Platform.runLater(() -> {
@@ -63,7 +73,7 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory 
     
 
     public void setSceneToClassOutlineScene() {
-        classOutlineScene = new ClassOutlineScene(new VBox(), this);
+        classOutlineScene.buildClassOutlineScene();
         fxPanel.setScene(classOutlineScene);
         methodEditingScene.removeEventHandler(KeyEvent.KEY_PRESSED, methodEditingScene);
     }
