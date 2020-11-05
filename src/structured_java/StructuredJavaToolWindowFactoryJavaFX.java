@@ -8,11 +8,13 @@ import com.intellij.psi.PsiMethod;
 import javafx.application.Platform;
 import javafx.embed.swing.JFXPanel;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.Background;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
+import java.awt.*;
 
 
 public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory {
@@ -23,6 +25,7 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory 
     private JFXPanel fxPanel;
     private Font defaultUiFont;
     private Font defaultEditorFont;
+    private Color defaultEditorBackgroundColor;
 
     public Project getProject() {
         return project;
@@ -40,17 +43,14 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory 
         return defaultUiFont;
     }
 
-    public void setDefaultUiFont(Font defaultUiFont) {
-        this.defaultUiFont = defaultUiFont;
-    }
-
     public Font getDefaultEditorFont() {
         return defaultEditorFont;
     }
 
-    public void setDefaultEditorFont(Font defaultEditorFont) {
-        this.defaultEditorFont = defaultEditorFont;
+    public Color getDefaultEditorBackgroundColor() {
+        return defaultEditorBackgroundColor;
     }
+
 
     @Override
     public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
@@ -59,6 +59,7 @@ public class StructuredJavaToolWindowFactoryJavaFX implements ToolWindowFactory 
         JComponent component = toolWindow.getComponent();
         defaultUiFont = Utilities.getDefaultFont(project);
         defaultEditorFont = Utilities.getDefaultEditorFont(project);
+        defaultEditorBackgroundColor = Utilities.getDefaultEditorBackgroundColor(project);
 
         // Start the Structured Java tool window UI.
         DumbService.getInstance(project).smartInvokeLater(() -> Platform.runLater(() -> {

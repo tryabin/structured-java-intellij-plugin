@@ -24,6 +24,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import org.apache.commons.lang3.StringUtils;
 
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -326,6 +327,11 @@ public class MethodEditingScene extends Scene implements EventHandler<KeyEvent> 
         // Set the method source text area font.
         methodTextArea.setFont(ui.getDefaultEditorFont());
         root.getChildren().add(methodTextArea);
+
+        // Set the method source text area background color.
+        Color backgroundColor = ui.getDefaultEditorBackgroundColor();
+        String colorHex = String.format("#%02x%02x%02x", backgroundColor.getRed(), backgroundColor.getGreen(), backgroundColor.getBlue());
+        methodTextArea.setStyle("-fx-control-inner-background:" + colorHex + ";");
 
         // Add a key listener to replace tabs with 4 spaces.
         methodTextArea.textProperty().addListener((observable, oldValue, newValue) ->

@@ -10,6 +10,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.*;
 import javafx.scene.text.Font;
 
+import java.awt.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -95,6 +96,14 @@ public class Utilities {
             String defaultFontName = editor.getColorsScheme().getEditorFontName();
             int defaultFontSize = editor.getColorsScheme().getEditorFontSize();
             return Font.font(defaultFontName, defaultFontSize);
+        });
+    }
+
+
+    protected static Color getDefaultEditorBackgroundColor(Project project) {
+        return ApplicationManager.getApplication().runReadAction((Computable<Color>) () -> {
+            Editor editor = EditorFactory.getInstance().createEditor(FileEditorManager.getInstance(project).getSelectedTextEditor().getDocument(), project);
+            return editor.getColorsScheme().getDefaultBackground();
         });
     }
 }

@@ -37,7 +37,6 @@ public class ClassOutlineScene extends Scene implements EventHandler<KeyEvent> {
     private StructuredJavaToolWindowFactoryJavaFX ui;
 
     // Constants
-    private static final Background DEFAULT_BACKGROUND = new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY));
     private static final Background HIGHLIGHTED_BACKGROUND = new Background(new BackgroundFill(Color.GRAY, CornerRadii.EMPTY, Insets.EMPTY));
     private static final List<Area> AREA_ORDERING = Arrays.asList(Area.VARIABLE, Area.METHOD, Area.ENUM, Area.INNER_CLASS);
     private static final ObservableList<String> ACCESS_MODIFIERS = FXCollections.observableArrayList("private", "protected", "public", "None");
