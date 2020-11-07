@@ -552,8 +552,10 @@ public class ClassOutlineScene extends Scene implements EventHandler<KeyEvent> {
                     break;
                 }
                 case ROW: {
-                    keyboardFocusInfo.setFocusLevel(KeyboardFocusInfo.FocusLevel.COLUMN);
-                    keyboardFocusInfo.setFocusedColumn(0);
+                    if (focusedRowArea.getChildren().get(keyboardFocusInfo.getFocusedRow()) instanceof  HBox) {
+                        keyboardFocusInfo.setFocusLevel(KeyboardFocusInfo.FocusLevel.COLUMN);
+                        keyboardFocusInfo.setFocusedColumn(0);
+                    }
                     break;
                 }
                 case COLUMN: {
@@ -796,7 +798,7 @@ public class ClassOutlineScene extends Scene implements EventHandler<KeyEvent> {
                 focusedRowArea.getChildren().get(keyboardFocusInfo.getFocusedRow()).requestFocus();
                 break;
             case COLUMN:
-                HBox row = (HBox) focusedRowArea.getChildren().get(keyboardFocusInfo.getFocusedRow());
+                HBox row = (HBox)focusedRowArea.getChildren().get(keyboardFocusInfo.getFocusedRow());
                 row.getChildren().get(keyboardFocusInfo.getFocusedColumn()).requestFocus();
                 break;
         }
