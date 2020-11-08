@@ -8,7 +8,6 @@ import com.intellij.psi.PsiMethod;
 import javafx.application.Platform;
 import javafx.embed.swing.JFXPanel;
 import javafx.scene.input.KeyEvent;
-import javafx.scene.layout.Background;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import org.jetbrains.annotations.NotNull;

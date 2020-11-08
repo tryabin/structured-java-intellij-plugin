@@ -180,6 +180,7 @@ public class MethodEditingScene extends Scene implements EventHandler<KeyEvent> 
 
         // Save method button
         saveMethodButton = new Button("Save Method");
+        saveMethodButton.setStyle(getDefaultFieldStyle());
         saveMethodButton.setOnAction(new AddMethodHandler(ui));
         root.getChildren().add(saveMethodButton);
     }
@@ -204,6 +205,7 @@ public class MethodEditingScene extends Scene implements EventHandler<KeyEvent> 
 
         // Back button
         backButton = new Button("Back");
+        backButton.setStyle(getDefaultFieldStyle());
         backButton.setOnAction(event -> ui.setSceneToClassOutlineScene());
         root.getChildren().add(backButton);
 
@@ -222,7 +224,7 @@ public class MethodEditingScene extends Scene implements EventHandler<KeyEvent> 
         methodRow.setSpacing(5);
 
         // Modifier dropdowns
-        String fieldStyle = getStyleString(ui.getDefaultUiFont().getName(), METHOD_HEADER_FONT_SIZE);
+        String fieldStyle = getDefaultFieldStyle();
         for (String modifier : methodData.getModifiers()) {
             ComboBox<String> modifierBox = new ComboBox<>(FXCollections.observableArrayList(PsiModifier.MODIFIERS));
             modifierBox.getSelectionModel().select(modifier);
@@ -464,5 +466,10 @@ public class MethodEditingScene extends Scene implements EventHandler<KeyEvent> 
         sourceText = "\n" + sourceText + "    ";
 
         return sourceText;
+    }
+
+
+    private String getDefaultFieldStyle() {
+        return getStyleString(ui.getDefaultUiFont().getName(), METHOD_HEADER_FONT_SIZE);
     }
 }
